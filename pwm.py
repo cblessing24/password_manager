@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 
 import click
 
@@ -15,7 +16,7 @@ class SiteDatabase:
     def add(self, name, login, password):
         if name in self.database:
             raise SiteAlreadyExists()
-        self.database[name] = {'login': login, 'password': password}
+        self.database[name] = Site(login, password)
         self.save()
 
     def remove(self, name):
@@ -31,15 +32,27 @@ class SiteDatabase:
 
     def save(self):
         with open(self.database_path, 'w') as f:
-            json.dump(self.database, f, indent=4, sort_keys=True)
+            json_database = {name: {'login': site.login, 'password': site.password} for name, site in self}
+            json.dump(json_database, f, indent=4, sort_keys=True)
 
     def load(self):
         with open(self.database_path, 'r') as f:
-            return json.load(f)
+            json_database = json.load(f)
+            return {name: Site(json_site['login'], json_site['password']) for name, json_site in json_database.items()}
 
     def drop(self):
         self.database = {}
         self.save()
+
+    def __iter__(self):
+        for name, site in self.database.items():
+            yield name, site
+
+
+@dataclass()
+class Site:
+    login: str
+    password: str
 
 
 class SiteAlreadyExists(Exception):
@@ -98,3 +111,17 @@ def drop():
     db = SiteDatabase()
     db.drop()
     click.echo('Dropped database.')
+
+
+def main():
+    db = SiteDatabase()
+    # db.add('Test1', 'mail1@test.de', 'password1')
+    # db.add('Test2', 'mail2@test.de', 'password2')
+    # db.add('Test3', 'mail3@test.de', 'password3')
+    # db.add('Test4', 'mail4@test.de', 'password4')
+    # db.add('Test5', 'mail5@test.de', 'password5')
+    db.drop()
+
+
+if __name__ == '__main__':
+    main()
