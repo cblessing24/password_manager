@@ -1,10 +1,10 @@
 {
-    "kap": {
-        "login": "kappa@gmail.com",
-        "password": "password123"
+    "Kappa123": {
+        "login": "kappa@123.com",
+        "password": "password1"
     },
-    "kappa": {
-        "login": "kappa@gmail.com",
-        "password": "password123"
+    "Kappa1234": {
+        "login": "kappa@124.com",
+        "password": "password2"
     }
 }

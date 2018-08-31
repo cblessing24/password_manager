@@ -12,6 +12,7 @@ class SiteDatabase:
             self.database = self.load()
         except FileNotFoundError:
             self.database = {}
+        self.n_sites = len(self.database)
 
     def add(self, name, login, password):
         if name in self.database:
@@ -111,6 +112,20 @@ def drop():
     db = SiteDatabase()
     db.drop()
     click.echo('Dropped database.')
+
+
+@cli.command()
+def show():
+    db = SiteDatabase()
+    if db.n_sites == 0:
+        click.echo('0 sites in database.')
+    else:
+        if db.n_sites == 1:
+            click.echo(f'{db.n_sites} site in database:')
+        else:
+            click.echo(f'{db.n_sites} sites in database:')
+        for name, site in db:
+            click.echo(f'Name: {name}, Login: {site.login}, Password: {site.password}')
 
 
 def main():
