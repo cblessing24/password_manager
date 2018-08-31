@@ -1,23 +1,22 @@
-import pickle
-from dataclasses import dataclass
+import json
 
 import click
 
 
 class SiteDatabase:
 
-    def __init__(self, database_path='database.pickle'):
+    def __init__(self, database_path='database.json'):
         self.database_path = database_path
         try:
-            with open(database_path, 'rb') as f:
-                self.database = pickle.load(f)
+            self.database = self.load()
+            print(self.database)
         except FileNotFoundError:
             self.database = {}
 
     def add(self, name, login, password):
         if name in self.database:
             raise SiteAlreadyExists()
-        self.database[name] = Site(login, password)
+        self.database[name] = {'login': login, 'password': password}
         self.save()
 
     def remove(self, name):
@@ -32,14 +31,12 @@ class SiteDatabase:
         return self.database[name]
 
     def save(self):
-        with open(self.database_path, 'wb') as f:
-            pickle.dump(self.database, f)
+        with open(self.database_path, 'w') as f:
+            json.dump(self.database, f, indent=4, sort_keys=True)
 
-
-@dataclass
-class Site:
-    login: str
-    password: str
+    def load(self):
+        with open(self.database_path, 'r') as f:
+            return json.load(f)
 
 
 class SiteAlreadyExists(Exception):
