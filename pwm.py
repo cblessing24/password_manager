@@ -9,7 +9,6 @@ class SiteDatabase:
         self.database_path = database_path
         try:
             self.database = self.load()
-            print(self.database)
         except FileNotFoundError:
             self.database = {}
 
@@ -37,6 +36,10 @@ class SiteDatabase:
     def load(self):
         with open(self.database_path, 'r') as f:
             return json.load(f)
+
+    def drop(self):
+        self.database = {}
+        self.save()
 
 
 class SiteAlreadyExists(Exception):
@@ -88,3 +91,10 @@ def get(name):
         click.echo(f'Error: A site with the name "{name}" does not exist.')
     else:
         click.echo(site)
+
+
+@cli.command()
+def drop():
+    db = SiteDatabase()
+    db.drop()
+    click.echo('Dropped database.')
