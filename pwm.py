@@ -107,7 +107,7 @@ def remove(name):
 
 @cli.command()
 @click.option('--name', type=str, help='Name of the site.', prompt=True)
-@click.option('--login', 'copy_login', help='Copy the login instead of the password.' , is_flag=True)
+@click.option('--login', 'copy_login', help='Copy the login instead of the password.', is_flag=True)
 def get(name, copy_login):
     """Copy the password of a site to the clipboard."""
     db = SiteDatabase()
