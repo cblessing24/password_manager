@@ -1,8 +1,83 @@
 import json
-from dataclasses import dataclass
+import dataclasses
 
 import click
 import clipboard
+
+
+class JSONDataclassEncoder(json.JSONEncoder):
+
+    def default(self, object_):
+        if dataclasses.is_dataclass(object_):
+            return dataclasses.asdict(object_)
+        return super().default(object_)
+
+
+class Database:
+
+    def __init__(self, database_path, class_):
+        self.class_ = class_
+        self.database_path = database_path
+        self.database = None
+        try:
+            self.load()
+        except FileNotFoundError:
+            self.init()
+
+    def get(self, name):
+        if name not in self.database:
+            raise DoesNotExist
+        return self.database[name]
+
+    def new(self, name, instance):
+        if name in self.database:
+            raise AlreadyExists
+        self.database['data'][name] = instance
+        self.save()
+
+    def remove(self, name):
+        if name not in self.database:
+            raise DoesNotExist
+        del self.database['data'][name]
+        self.save()
+
+    def save(self):
+        with open(self.database_path, 'w') as f:
+            json.dump(self.database, f, cls=JSONDataclassEncoder, indent=4, sort_keys=True)
+
+    def load(self):
+        with open(self.database_path, 'r') as f:
+            database_as_dict = json.load(f)
+            if database_as_dict['class'] != self.class_.__name__:
+                raise DatabaseClassMismatch
+            # Convert the dicts back to dataclass objects
+            self.database = {}
+            for key, object_as_dict in database_as_dict['data'].items():
+                self.database[key] = self.class_(*object_as_dict.values())
+
+    def init(self):
+        self.database = {'class': self.class_.__name__, 'data': {}}
+        self.save()
+
+    def drop(self):
+        self.database = {}
+        self.save()
+
+    def __iter__(self):
+        for name, object_ in self.database:
+            yield name, object_
+
+
+class DoesNotExist(Exception):
+    pass
+
+
+class AlreadyExists(Exception):
+    pass
+
+
+class DatabaseClassMismatch(Exception):
+    pass
 
 
 class SiteDatabase:
@@ -51,7 +126,7 @@ class SiteDatabase:
             yield name, site
 
 
-@dataclass()
+@dataclasses.dataclass()
 class Site:
     login: str
     password: str
