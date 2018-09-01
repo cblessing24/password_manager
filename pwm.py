@@ -79,6 +79,7 @@ def cli():
 @click.option('--login', type=str, help='Login information of the new site.', prompt=True)
 @click.option('--password', type=str, help='Password of the new site.', prompt=True, hide_input=True)
 def add(name, login, password):
+    """Add a new site to the database."""
     db = SiteDatabase()
     try:
         db.add(name, login, password)
@@ -93,6 +94,7 @@ def add(name, login, password):
 @click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
               prompt=f'Are you sure you want to remove the site?')
 def remove(name):
+    """Remove a site from the database."""
     db = SiteDatabase()
     try:
         db.remove(name)
@@ -105,6 +107,7 @@ def remove(name):
 @cli.command()
 @click.option('--name', type=str, help='Name of the site.', prompt=True)
 def get(name):
+    """Get a site from the database."""
     db = SiteDatabase()
     try:
         site = db.get(name)
@@ -118,6 +121,7 @@ def get(name):
 @click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
               prompt=f'Are you sure you want to drop the database?')
 def drop():
+    """Drop the database."""
     db = SiteDatabase()
     db.drop()
     click.echo('Database dropped.')
@@ -125,6 +129,7 @@ def drop():
 
 @cli.command()
 def show():
+    """Print all sites in the database."""
     db = SiteDatabase()
     if db.n_sites == 0:
         click.echo('0 sites in database.')
