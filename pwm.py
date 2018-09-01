@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 
 import click
+import clipboard
 
 
 class SiteDatabase:
@@ -106,15 +107,21 @@ def remove(name):
 
 @cli.command()
 @click.option('--name', type=str, help='Name of the site.', prompt=True)
-def get(name):
-    """Get a site from the database."""
+@click.option('--login', 'copy_login', help='Copy the login instead of the password.' , is_flag=True)
+def get(name, copy_login):
+    """Copy the password of a site to the clipboard."""
     db = SiteDatabase()
     try:
         site = db.get(name)
     except SiteDoesNotExist:
         click.echo(f'Error: A site with the name "{name}" does not exist.')
     else:
-        click.echo(site)
+        if copy_login:
+            clipboard.copy(site.login)
+            click.echo('Copied login to clipboard.')
+        else:
+            clipboard.copy(site.password)
+            click.echo('Copied password to clipboard.')
 
 
 @cli.command()
