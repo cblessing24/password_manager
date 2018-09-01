@@ -78,7 +78,7 @@ def cli():
 @click.option('--name', type=str, help='Name of the new site.', prompt=True)
 @click.option('--login', type=str, help='Login information of the new site.', prompt=True)
 @click.option('--password', type=str, help='Password of the new site.', prompt=True, hide_input=True)
-def add(name, login, password):
+def new(name, login, password):
     """Add a new site to the database."""
     db = SiteDatabase()
     try:
@@ -128,8 +128,8 @@ def drop():
 
 
 @cli.command()
-def show():
-    """Print all sites in the database."""
+def ls():
+    """List all sites in the database."""
     db = SiteDatabase()
     if db.n_sites == 0:
         click.echo('0 sites in database.')
