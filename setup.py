@@ -6,7 +6,8 @@ setup(
     version='0.1',
     py_modules=['pwm'],
     install_requires=[
-        'Click'
+        'Click',
+        'clipboard'
     ],
     entry_points='''
       [console_scripts]
