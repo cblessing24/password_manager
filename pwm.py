@@ -64,15 +64,20 @@ class SiteDoesNotExist(Exception):
     pass
 
 
+def abort_if_false(context, _, value):
+    if not value:
+        context.abort()
+
+
 @click.group()
 def cli():
     pass
 
 
 @cli.command()
-@click.argument('name')
-@click.argument('login')
-@click.argument('password')
+@click.option('--name', type=str, help='Name of the new site.', prompt=True)
+@click.option('--login', type=str, help='Login information of the new site.', prompt=True)
+@click.option('--password', type=str, help='Password of the new site.', prompt=True, hide_input=True)
 def add(name, login, password):
     db = SiteDatabase()
     try:
@@ -84,7 +89,9 @@ def add(name, login, password):
 
 
 @cli.command()
-@click.argument('name')
+@click.option('--name', type=str, help='Name of the site.', prompt=True)
+@click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
+              prompt=f'Are you sure you want to remove the site?')
 def remove(name):
     db = SiteDatabase()
     try:
@@ -96,7 +103,7 @@ def remove(name):
 
 
 @cli.command()
-@click.argument('name')
+@click.option('--name', type=str, help='Name of the site.', prompt=True)
 def get(name):
     db = SiteDatabase()
     try:
@@ -108,10 +115,12 @@ def get(name):
 
 
 @cli.command()
+@click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
+              prompt=f'Are you sure you want to drop the database?')
 def drop():
     db = SiteDatabase()
     db.drop()
-    click.echo('Dropped database.')
+    click.echo('Database dropped.')
 
 
 @cli.command()
