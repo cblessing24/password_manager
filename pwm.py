@@ -201,7 +201,7 @@ def ls(context):
 
 @cli.group()
 def account():
-    """Manage your account"""
+    """Manage your account."""
     pass
 
 
@@ -212,8 +212,14 @@ def new():
 
 
 @account.command()
-def login():
-    """Login to your account."""
+def sign_in():
+    """Sign in to your account."""
+    pass
+
+
+@account.command()
+def sign_out():
+    """Sign out of your account."""
     pass
 
 
