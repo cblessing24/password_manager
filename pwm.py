@@ -13,7 +13,7 @@ class JSONDataclassEncoder(json.JSONEncoder):
         return super().default(object_)
 
 
-class Database:
+class DataclassDatabase:
 
     def __init__(self, database_path, class_):
         self.class_ = class_
@@ -109,8 +109,8 @@ def abort_if_false(context, _, value):
 @click.group()
 @click.pass_context
 def cli(context):
-    database = Database('sites.json', Site)
-    context.obj = {'database': database}
+    site_database = DataclassDatabase('sites.json', Site)
+    context.obj = {'site_database': site_database}
 
 
 @cli.command()
@@ -120,14 +120,14 @@ def cli(context):
 @click.pass_context
 def new(context, name, login, password):
     """Add a new site to the database."""
-    database = context.obj['database']
+    site_database = context.obj['site_database']
     site = Site(login, password)
     try:
-        database.new(name, site)
+        site_database.new(name, site)
     except AlreadyExistsError:
         click.echo(f'Error: A site with the name "{name}" already exists. Please choose another name.')
     else:
-        click.echo(f'Added entry with name "{name}".')
+        click.echo(f'Added site with name "{name}".')
 
 
 @cli.command()
@@ -137,9 +137,9 @@ def new(context, name, login, password):
 @click.pass_context
 def remove(context, name):
     """Remove a site from the database."""
-    database = context.obj['database']
+    site_database = context.obj['site_database']
     try:
-        database.remove(name)
+        site_database.remove(name)
     except DoesNotExistError:
         click.echo(f'Error: A site with the name "{name}" does not exist.')
     else:
@@ -152,9 +152,9 @@ def remove(context, name):
 @click.pass_context
 def get(context, name, copy_login):
     """Copy the password of a site to the clipboard."""
-    database = context.obj['database']
+    site_database = context.obj['site_database']
     try:
-        site = database.get(name)
+        site = site_database.get(name)
     except DoesNotExistError:
         click.echo(f'Error: A site with the name "{name}" does not exist.')
     else:
@@ -168,12 +168,12 @@ def get(context, name, copy_login):
 
 @cli.command()
 @click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
-              prompt=f'Are you sure you want to drop the database?')
+              prompt=f'Are you sure you want to drop all sites from the database?')
 @click.pass_context
 def drop(context):
-    """Drop all entries from the database."""
-    database = context.obj['database']
-    database.drop()
+    """Drop all entries from the site database."""
+    site_database = context.obj['site_database']
+    site_database.drop()
     click.echo('Database dropped.')
 
 
@@ -181,15 +181,15 @@ def drop(context):
 @click.pass_context
 def ls(context):
     """List all sites in the database."""
-    database = context.obj['database']
-    if database.n_entries == 0:
+    site_database = context.obj['site_database']
+    if site_database.n_entries == 0:
         click.echo('0 sites in database.')
     else:
-        if database.n_entries == 1:
-            click.echo(f'{database.n_entries} site in database:')
+        if site_database.n_entries == 1:
+            click.echo(f'{site_database.n_entries} site in database:')
         else:
-            click.echo(f'{database.n_entries} sites in database:')
-        for name, site in database:
+            click.echo(f'{site_database.n_entries} sites in database:')
+        for name, site in site_database:
             click.echo(f'Name: {name}, Login: {site.login}, Password: {site.password}')
 
 
