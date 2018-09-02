@@ -17,7 +17,7 @@ class DataclassDatabase:
 
     def __init__(self, database_path, class_):
         self.class_ = class_
-        self.database_path = database_path
+        self.database_path = database_path + '.json'
         self.database = None
         self.n_entries = None
         try:
@@ -107,13 +107,19 @@ def abort_if_false(context, _, value):
 
 
 @click.group()
+def cli():
+    pass
+
+
+@cli.group()
 @click.pass_context
-def cli(context):
-    site_database = DataclassDatabase('sites.json', Site)
+def sites(context):
+    """Manage your sites."""
+    site_database = DataclassDatabase('sites', Site)
     context.obj = {'site_database': site_database}
 
 
-@cli.command()
+@sites.command()
 @click.option('--name', type=str, help='Name of the new site.', prompt=True)
 @click.option('--login', type=str, help='Login information of the new site.', prompt=True)
 @click.option('--password', type=str, help='Password of the new site.', prompt=True, hide_input=True)
@@ -130,7 +136,7 @@ def new(context, name, login, password):
         click.echo(f'Added site with name "{name}".')
 
 
-@cli.command()
+@sites.command()
 @click.option('--name', type=str, help='Name of the site.', prompt=True)
 @click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
               prompt=f'Are you sure you want to remove the site?')
@@ -146,7 +152,7 @@ def remove(context, name):
         click.echo(f'Removed the site with the name "{name}".')
 
 
-@cli.command()
+@sites.command()
 @click.option('--name', type=str, help='Name of the site.', prompt=True)
 @click.option('--login', 'copy_login', help='Copy the login instead of the password.', is_flag=True)
 @click.pass_context
@@ -166,7 +172,7 @@ def get(context, name, copy_login):
             click.echo('Copied password to clipboard.')
 
 
-@cli.command()
+@sites.command()
 @click.option('--yes', is_flag=True, callback=abort_if_false, expose_value=False,
               prompt=f'Are you sure you want to drop all sites from the database?')
 @click.pass_context
@@ -177,7 +183,7 @@ def drop(context):
     click.echo('Database dropped.')
 
 
-@cli.command()
+@sites.command()
 @click.pass_context
 def ls(context):
     """List all sites in the database."""
@@ -191,6 +197,24 @@ def ls(context):
             click.echo(f'{site_database.n_entries} sites in database:')
         for name, site in site_database:
             click.echo(f'Name: {name}, Login: {site.login}, Password: {site.password}')
+
+
+@cli.group()
+def account():
+    """Manage your account"""
+    pass
+
+
+@account.command()
+def new():
+    """Create a new account."""
+    pass
+
+
+@account.command()
+def login():
+    """Login to your account."""
+    pass
 
 
 def main():
