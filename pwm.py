@@ -95,6 +95,12 @@ class Site:
     password: str
 
 
+@dataclasses.dataclass()
+class User:
+    username: str
+    hashed_password: str
+
+
 def abort_if_false(context, _, value):
     if not value:
         context.abort()
@@ -165,7 +171,7 @@ def get(context, name, copy_login):
               prompt=f'Are you sure you want to drop the database?')
 @click.pass_context
 def drop(context):
-    """Drop the database."""
+    """Drop all entries from the database."""
     database = context.obj['database']
     database.drop()
     click.echo('Database dropped.')
