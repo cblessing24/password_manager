@@ -76,6 +76,11 @@ class DataclassDatabase:
         for name, object_ in self.database['data'].items():
             yield name, object_
 
+    def __contains__(self, name):
+        if name in self.database['data']:
+            return True
+        return False
+
 
 class DoesNotExistError(Exception):
     pass
@@ -98,7 +103,7 @@ class Site:
 @dataclasses.dataclass()
 class User:
     username: str
-    hashed_password: str
+    password: str
 
 
 def abort_if_false(context, _, value):
@@ -200,15 +205,38 @@ def ls(context):
 
 
 @cli.group()
-def account():
+@click.pass_context
+def account(context):
     """Manage your account."""
-    pass
+    user_database = DataclassDatabase('users', User)
+    context.obj = {'user_database': user_database}
+
+
+def validate_username(context, _param, username):
+    user_database = context.obj['user_database']
+    if username in user_database:
+        raise click.BadParameter(
+            f'A user with the username "{username}" already exists. Please choose another username.')
+    return username
+
+
+def validate_password(_context, _param, password):
+    confirm_password = click.prompt('Confirm password', type=str, hide_input=True)
+    if password != confirm_password:
+        raise click.BadParameter('Passwords not identical.')
 
 
 @account.command()
-def new():
+@click.option('--username', type=str, help='Username for the new account.', prompt=True, callback=validate_username)
+@click.option('--password', type=str, help='Password for the new account.', prompt=True, hide_input=True,
+              callback=validate_password)
+@click.pass_context
+def new(context, username, password):
     """Create a new account."""
-    pass
+    user_database = context.obj['user_database']
+    user = User(username, password)
+    user_database.new(username, user)
+    click.echo(f'Created a new account with the username "{username}".')
 
 
 @account.command()
