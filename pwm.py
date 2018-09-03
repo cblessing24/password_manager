@@ -224,6 +224,7 @@ def validate_password(_context, _param, password):
     confirm_password = click.prompt('Confirm password', type=str, hide_input=True)
     if password != confirm_password:
         raise click.BadParameter('Passwords not identical.')
+    return password
 
 
 @account.command()
