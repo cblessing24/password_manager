@@ -1,8 +1,14 @@
 import json
 import dataclasses
+import base64
+import os
 
 import click
 import clipboard
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 class JSONDataclassEncoder(json.JSONEncoder):
@@ -103,7 +109,8 @@ class Site:
 @dataclasses.dataclass()
 class User:
     username: str
-    password: str
+    encrypted_data_key: str
+    salt: str
 
 
 def abort_if_false(context, _, value):
@@ -234,8 +241,20 @@ def validate_password(_context, _param, password):
 @click.pass_context
 def new(context, username, password):
     """Create a new account."""
+    salt = os.urandom(16)
+    key_derivation_function = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+        backend=default_backend()
+    )
+    user_key = base64.urlsafe_b64encode(key_derivation_function.derive(password.encode()))
+    data_key = Fernet.generate_key()
+    fernet = Fernet(user_key)
+    encrypted_data_key = fernet.encrypt(data_key)
     user_database = context.obj['user_database']
-    user = User(username, password)
+    user = User(username, encrypted_data_key.decode(), base64.b64encode(salt).decode())
     user_database.new(username, user)
     click.echo(f'Created a new account with the username "{username}".')
 
