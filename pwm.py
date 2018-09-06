@@ -259,18 +259,6 @@ def new(context, username, password):
     click.echo(f'Created a new account with the username "{username}".')
 
 
-@account.command()
-def sign_in():
-    """Sign in to your account."""
-    pass
-
-
-@account.command()
-def sign_out():
-    """Sign out of your account."""
-    pass
-
-
 def main():
     pass
 
