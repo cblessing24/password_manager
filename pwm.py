@@ -32,8 +32,6 @@ class UserDatabase(Database):
 
     def get_user_by_name(self, name):
         with self.connection:
-            if not self._check_user_existence_by_name(name):
-                raise DoesNotExist
             self._select_user_by_name(name)
             entries = self.cursor.fetchall()
             assert len(entries) == 1
@@ -47,28 +45,24 @@ class UserDatabase(Database):
         enc_dek = fernet.encrypt(dek)
         user = User(name, base64.urlsafe_b64encode(salt).decode(), enc_dek.decode())
         self.insert_user(user)
-            
+
     def insert_user(self, user):
         with self.connection:
-            if self._check_user_existence_by_name(user.name):
-                raise AlreadyExists
             self.cursor.execute('INSERT INTO users VALUES (:name, :salt, :enc_dek)',
                                 {'name': user.name, 'salt': user.salt, 'enc_dek': user.enc_dek})
 
     def remove_user_by_name(self, name):
         with self.connection:
-            if not self._check_user_existence_by_name(name):
-                raise DoesNotExist
             self.cursor.execute('DELETE FROM users WHERE name = :name', {'name': name})
 
-    def _select_user_by_name(self, name):
-        self.cursor.execute('SELECT * FROM users WHERE name = :name', {'name': name})
-
-    def _check_user_existence_by_name(self, name):
+    def check_user_existence_by_name(self, name):
         self._select_user_by_name(name)
         if self.cursor.fetchall():
             return True
         return False
+
+    def _select_user_by_name(self, name):
+        self.cursor.execute('SELECT * FROM users WHERE name = :name', {'name': name})
 
     @staticmethod
     def _derive_key_encryption_key_from_password(password, salt):
@@ -82,19 +76,21 @@ class UserDatabase(Database):
         return base64.urlsafe_b64encode(key_derivation_function.derive(password.encode()))
 
 
-class AlreadyExists(Exception):
-    pass
-
-
-class DoesNotExist(Exception):
-    pass
-
-
 @dataclass()
 class User:
     name: str
     salt: str
     enc_dek: str
+
+
+def validate_new_username(ctx, _param, value):
+    user_db = ctx.obj['user_db']
+    while True:
+        if not user_db.check_user_existence_by_name(value):
+            break
+        click.echo(f'Error: A user with the username "{value}" already exists. Please choose a different name.')
+        value = click.prompt('Username', type=str)
+    return value
 
 
 @click.group()
@@ -103,21 +99,28 @@ def cli():
 
 
 @cli.group()
-def account():
-    pass
+@click.pass_context
+def account(ctx):
+    """Manage your account."""
+    user_db = UserDatabase()
+    ctx.obj = {'user_db': user_db}
 
 
 @account.command()
-@click.option('--username', type=str, help='Username for the new account.', prompt=True)
+@click.option('--username', type=str, help='Username for the new account.', prompt=True, callback=validate_new_username)
 @click.option('--password', type=str, help='Password for the new account.', prompt=True,
               hide_input=True, confirmation_prompt=True)
-def new(username, password):
-    pass
+@click.pass_context
+def new(ctx, username, password):
+    """Create a new account."""
+    user_db = ctx.obj['user_db']
+    user_db.create_user(username, password)
+    click.echo(f'Successfully created a new user with the username "{username}".')
 
 
 def main():
     db = UserDatabase()
-    print(db.get_user_by_name('Adolf'))
+    print(db.check_user_existence_by_name('Christoph'))
 
 
 if __name__ == '__main__':
