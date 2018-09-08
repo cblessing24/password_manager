@@ -9,6 +9,36 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
+class PasswordManager:
+
+    def __init__(self, directory=None):
+        self.user_database = UserDatabase(directory)
+
+
+    def check_user_existence_by_name(self, name):
+        return name in self.user_database
+
+    def create_user(self, name, password):
+        salt = os.urandom(16)
+        kek = self._derive_key_encryption_key_from_password(password, salt)
+        dek = Fernet.generate_key()
+        fernet = Fernet(kek)
+        enc_dek = fernet.encrypt(dek)
+        user = User(name, base64.urlsafe_b64encode(salt).decode(), enc_dek.decode())
+        self.user_database.insert_user(user)
+
+    @staticmethod
+    def _derive_key_encryption_key_from_password(password, salt):
+        key_derivation_function = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        return base64.urlsafe_b64encode(key_derivation_function.derive(password.encode()))
+
+
 class Database:
 
     def __init__(self, directory):
@@ -20,7 +50,7 @@ class Database:
 
 class UserDatabase(Database):
 
-    def __init__(self, directory=None):
+    def __init__(self, directory):
         super().__init__(directory)
         with self.connection:
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -36,15 +66,6 @@ class UserDatabase(Database):
             assert len(entries) == 1
             return User(*entries[0])
 
-    def create_user(self, name, password):
-        salt = os.urandom(16)
-        kek = self._derive_key_encryption_key_from_password(password, salt)
-        dek = Fernet.generate_key()
-        fernet = Fernet(kek)
-        enc_dek = fernet.encrypt(dek)
-        user = User(name, base64.urlsafe_b64encode(salt).decode(), enc_dek.decode())
-        self.insert_user(user)
-
     def insert_user(self, user):
         with self.connection:
             self.cursor.execute('INSERT INTO users VALUES (:name, :salt, :enc_dek)',
@@ -54,25 +75,14 @@ class UserDatabase(Database):
         with self.connection:
             self.cursor.execute('DELETE FROM users WHERE name = :name', {'name': name})
 
-    def check_user_existence_by_name(self, name):
+    def _select_user_by_name(self, name):
+        self.cursor.execute('SELECT * FROM users WHERE name = :name', {'name': name})
+
+    def __contains__(self, name):
         self._select_user_by_name(name)
         if self.cursor.fetchall():
             return True
         return False
-
-    def _select_user_by_name(self, name):
-        self.cursor.execute('SELECT * FROM users WHERE name = :name', {'name': name})
-
-    @staticmethod
-    def _derive_key_encryption_key_from_password(password, salt):
-        key_derivation_function = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
-        )
-        return base64.urlsafe_b64encode(key_derivation_function.derive(password.encode()))
 
 
 @dataclass()
