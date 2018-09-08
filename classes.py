@@ -49,6 +49,9 @@ class PasswordManager:
         new_enc_dek = new_fernet.encrypt(dek)
         self.user_database.update_user_encrypted_data_encryption_key(name, new_enc_dek.decode())
 
+    def delete_user(self, name):
+        self.user_database.remove_user_by_name(name)
+
     @staticmethod
     def _derive_key_encryption_key_from_password(password, salt):
         key_derivation_function = PBKDF2HMAC(
@@ -107,7 +110,7 @@ class UserDatabase(Database):
 
     def update_user_encrypted_data_encryption_key(self, name, new_enc_dek):
         with self.connection:
-            self.cursor.execute('''UPDATE users SET encrypted_dek = :new_enc_dek
+            self.cursor.execute('''UPDATE users SET enc_dek = :new_enc_dek
                 WHERE name = :name''', {'new_enc_dek': new_enc_dek, 'name': name})
 
     def _select_user_by_name(self, name):
