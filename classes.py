@@ -38,6 +38,17 @@ class PasswordManager:
             return False
         return True
 
+    def change_user_password(self, name, old_password, new_password):
+        user = self.user_database.get_user_by_name(name)
+        salt = self.encode_salt(user.salt)
+        old_kek = self._derive_key_encryption_key_from_password(old_password, salt)
+        new_kek = self._derive_key_encryption_key_from_password(new_password, salt)
+        old_fernet = Fernet(old_kek)
+        new_fernet = Fernet(new_kek)
+        dek = old_fernet.decrypt(user.enc_dek.encode())
+        new_enc_dek = new_fernet.encrypt(dek)
+        self.user_database.update_user_encrypted_data_encryption_key(name, new_enc_dek.decode())
+
     @staticmethod
     def _derive_key_encryption_key_from_password(password, salt):
         key_derivation_function = PBKDF2HMAC(
