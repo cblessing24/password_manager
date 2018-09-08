@@ -21,7 +21,7 @@ def new(ctx, username, password):
     """Create a new account."""
     manager = ctx.obj['manager']
     manager.create_user(username, password)
-    click.echo(f'Success: Created a new user with the username "{username}".')
+    click.echo(f'Success: Created a new account with the username "{username}".')
 
 
 @cli.group()
@@ -49,7 +49,7 @@ def account(ctx):
 def change_password(ctx, new_password):
     """Change the password of your account."""
     ctx.obj['manager'].change_user_password(ctx.obj['username'], ctx.obj['password'], new_password)
-    click.echo('Success: Password changed.')
+    click.echo('Success: Your password has been changed.')
 
 
 @account.command()
@@ -59,7 +59,7 @@ def delete(ctx):
     click.confirm('This action can not be reversed. Are you sure?', abort=True)
     username = ctx.obj['username']
     ctx.obj['manager'].delete_user(username)
-    click.echo(f'Success: Deleted the user with the username "{username}".')
+    click.echo('Success: Your account has been deleted.".')
 
 
 def main():
