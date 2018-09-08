@@ -47,7 +47,7 @@ def account(ctx):
               callback=validation.new_password)
 @click.pass_context
 def change_password(ctx, new_password):
-    """Change your password."""
+    """Change the password of your account."""
     ctx.obj['manager'].change_user_password(ctx.obj['username'], ctx.obj['password'], new_password)
     click.echo('Success: Password changed.')
 
@@ -55,6 +55,7 @@ def change_password(ctx, new_password):
 @account.command()
 @click.pass_context
 def delete(ctx):
+    """Delete your account."""
     click.confirm('This action can not be reversed. Are you sure?', abort=True)
     username = ctx.obj['username']
     ctx.obj['manager'].delete_user(username)
