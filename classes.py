@@ -14,7 +14,6 @@ class PasswordManager:
     def __init__(self, directory=None):
         self.user_database = UserDatabase(directory)
 
-
     def check_user_existence_by_name(self, name):
         return name in self.user_database
 
