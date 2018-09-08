@@ -94,6 +94,11 @@ class UserDatabase(Database):
         with self.connection:
             self.cursor.execute('DELETE FROM users WHERE name = :name', {'name': name})
 
+    def update_user_encrypted_data_encryption_key(self, name, new_enc_dek):
+        with self.connection:
+            self.cursor.execute('''UPDATE users SET encrypted_dek = :new_enc_dek
+                WHERE name = :name''', {'new_enc_dek': new_enc_dek, 'name': name})
+
     def _select_user_by_name(self, name):
         self.cursor.execute('SELECT * FROM users WHERE name = :name', {'name': name})
 
