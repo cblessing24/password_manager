@@ -4,16 +4,25 @@ import validation
 from classes import PasswordManager
 
 
+def login_required(func):
+    func = click.option('--password', type=str, help='Your password.', prompt=True, hide_input=True,
+                        callback=validation.validate_password, expose_value=False)(func)
+    func = click.option('--username', type=str, help='Your username.', prompt=True,
+                        callback=validation.validate_username, expose_value=False)(func)
+    return func
+
+
 @click.group()
 @click.pass_context
 def cli(ctx):
+    """A basic password manager."""
     manager = PasswordManager()
     ctx.obj = {'manager': manager}
 
 
 @cli.command()
 @click.option('--username', type=str, help='Username for the new account.', prompt=True,
-              callback=validation.new_username)
+              callback=validation.validate_new_username)
 @click.option('--password', type=str, help='Password for the new account.', prompt=True,
               hide_input=True, confirmation_prompt=True)
 @click.pass_context
@@ -26,25 +35,15 @@ def new(ctx, username, password):
 
 @cli.group()
 @click.pass_context
-def account(ctx):
+def account(_ctx):
     """Manage your account."""
-    manager = ctx.obj['manager']
-    while True:
-        username = click.prompt('Username', type=str)
-        if manager.check_user_existence_by_name(username):
-            break
-        click.echo(f'Error: A user with the username "{username}" does not exist.')
-    while True:
-        password = click.prompt('Password', type=str, hide_input=True)
-        if manager.authenticate_user(username, password):
-            break
-        click.echo(f'Error: Invalid password for user "{username}".')
-    ctx.obj.update({'username': username, 'password': password})
+    pass
 
 
 @account.command()
+@login_required
 @click.option('--new_password', type=str, help='Your new password.', prompt=True, hide_input=True,
-              callback=validation.new_password)
+              callback=validation.validate_new_password)
 @click.pass_context
 def change_password(ctx, new_password):
     """Change the password of your account."""
@@ -53,6 +52,7 @@ def change_password(ctx, new_password):
 
 
 @account.command()
+@login_required
 @click.pass_context
 def delete(ctx):
     """Delete your account."""
