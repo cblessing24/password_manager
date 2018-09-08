@@ -3,7 +3,7 @@ import sqlite3
 import base64
 from dataclasses import dataclass
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -26,6 +26,17 @@ class PasswordManager:
         enc_dek = fernet.encrypt(dek)
         user = User(name, base64.urlsafe_b64encode(salt).decode(), enc_dek.decode())
         self.user_database.insert_user(user)
+
+    def authenticate_user(self, name, password):
+        user = self.user_database.get_user_by_name(name)
+        salt = base64.urlsafe_b64decode(user.salt.encode())
+        kek = self._derive_key_encryption_key_from_password(password, salt)
+        fernet = Fernet(kek)
+        try:
+            fernet.decrypt(user.enc_dek.encode())
+        except InvalidToken:
+            return False
+        return True
 
     @staticmethod
     def _derive_key_encryption_key_from_password(password, salt):
@@ -90,3 +101,12 @@ class User:
     name: str
     salt: str
     enc_dek: str
+
+
+def main():
+    manager = PasswordManager()
+    print(manager.authenticate_user('test', 'test'))
+
+
+if __name__ == '__main__':
+    main()
