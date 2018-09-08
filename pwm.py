@@ -45,6 +45,19 @@ def change_password(ctx, username, old_password, new_password):
     click.echo('Success: Password changed.')
 
 
+@account.command()
+@click.option('--username', type=str, help='Your username.', prompt=True,
+              callback=validation.username)
+@click.option('--password', type=str, help='Your password.', prompt=True, hide_input=True,
+              callback=validation.password)
+@click.pass_context
+def delete(ctx, username, password):
+    click.confirm('This action can not be reversed. Are you sure?', abort=True)
+    manager = ctx.obj['manager']
+    manager.delete_user(username)
+    click.echo(f'Success: Deleted the user with the username "{username}".')
+
+
 def main():
     manager = PasswordManager()
     print(manager.check_user_existence_by_name('Christoph'))
