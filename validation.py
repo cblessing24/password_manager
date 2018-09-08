@@ -32,3 +32,18 @@ def password(ctx, param, value):
     return value
 
 
+def new_password(ctx, param, value):
+    while True:
+        if value == ctx.params['old_password']:
+            click.echo('Error: Your new password must be different from your old one.')
+            value = click.prompt(param.prompt, type=str, hide_input=True)
+        else:
+            repeated_value = click.prompt('Repeat for confirmation', type=str, hide_input=True)
+            if value != repeated_value:
+                click.echo('Error: The two entered passwords do not match.')
+                value = click.prompt(param.prompt, type=str, hide_input=True)
+            else:
+                break
+    return value
+
+
