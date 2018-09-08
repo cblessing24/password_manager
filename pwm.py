@@ -1,7 +1,7 @@
 import click
 
 import validation
-from classes import UserDatabase
+from classes import PasswordManager
 
 
 @click.group()
@@ -13,8 +13,8 @@ def cli():
 @click.pass_context
 def account(ctx):
     """Manage your account."""
-    user_db = UserDatabase()
-    ctx.obj = {'user_db': user_db}
+    manager = PasswordManager()
+    ctx.obj = {'manager': manager}
 
 
 @account.command()
@@ -25,14 +25,14 @@ def account(ctx):
 @click.pass_context
 def new(ctx, username, password):
     """Create a new account."""
-    user_db = ctx.obj['user_db']
-    user_db.create_user(username, password)
+    manager = ctx.obj['manager']
+    manager.create_user(username, password)
     click.echo(f'Successfully created a new user with the username "{username}".')
 
 
 def main():
-    db = UserDatabase()
-    print(db.check_user_existence_by_name('Christoph'))
+    manager = PasswordManager()
+    print(manager.check_user_existence_by_name('Christoph'))
 
 
 if __name__ == '__main__':
