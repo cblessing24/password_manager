@@ -24,12 +24,12 @@ class PasswordManager:
         dek = Fernet.generate_key()
         fernet = Fernet(kek)
         enc_dek = fernet.encrypt(dek)
-        user = User(name, base64.urlsafe_b64encode(salt).decode(), enc_dek.decode())
+        user = User(name, self.decode_salt(salt), enc_dek.decode())
         self.user_database.insert_user(user)
 
     def authenticate_user(self, name, password):
         user = self.user_database.get_user_by_name(name)
-        salt = base64.urlsafe_b64decode(user.salt.encode())
+        salt = self.encode_salt(user.salt)
         kek = self._derive_key_encryption_key_from_password(password, salt)
         fernet = Fernet(kek)
         try:
@@ -48,6 +48,14 @@ class PasswordManager:
             backend=default_backend()
         )
         return base64.urlsafe_b64encode(key_derivation_function.derive(password.encode()))
+
+    @staticmethod
+    def decode_salt(encoded_salt):
+        return base64.urlsafe_b64encode(encoded_salt).decode()
+
+    @staticmethod
+    def encode_salt(decoded_salt):
+        return base64.urlsafe_b64decode(decoded_salt.encode())
 
 
 class Database:
