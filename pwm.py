@@ -20,7 +20,14 @@ def cli(ctx):
     ctx.obj = {'manager': manager}
 
 
-@cli.command()
+@cli.group()
+@click.pass_context
+def account(_ctx):
+    """Manage your account."""
+    pass
+
+
+@account.command()
 @click.option('--username', type=str, help='Username for the new account.', prompt=True,
               callback=validation.validate_new_username)
 @click.option('--password', type=str, help='Password for the new account.', prompt=True,
@@ -31,13 +38,6 @@ def new(ctx, username, password):
     manager = ctx.obj['manager']
     manager.create_user(username, password)
     click.echo(f'Success: Created a new account with the username "{username}".')
-
-
-@cli.group()
-@click.pass_context
-def account(_ctx):
-    """Manage your account."""
-    pass
 
 
 @account.command()
