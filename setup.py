@@ -7,7 +7,8 @@ setup(
     py_modules=['pwm'],
     install_requires=[
         'Click',
-        'clipboard'
+        'clipboard',
+        'cryptography'
     ],
     entry_points='''
       [console_scripts]
