@@ -21,7 +21,9 @@ def cli(ctx, master_password):
 @click.option('--name', type=str, prompt=True)
 @click.pass_context
 def get(ctx, name):
-    ctx.obj.get(name)
+    if name not in ctx.obj:
+        ctx.fail(f'A password with the name "{name}" does not exist.')
+    info, password = ctx.obj.get(name)
 
 
 @cli.command()
