@@ -4,6 +4,14 @@ import pyperclip
 from classes import PasswordManager
 
 
+help_texts = {
+    'name': 'The name associated with the password.',
+    'info': 'The info associated with the password.',
+    'password': 'The password.',
+    'get_info': 'Copy the info instead of the password to the clipboard.'
+}
+
+
 @click.group()
 @click.pass_context
 def cli(ctx):
@@ -21,8 +29,8 @@ def cli(ctx):
 
 
 @cli.command()
-@click.option('--name', type=str, prompt=True)
-@click.option('--get_info', is_flag=True)
+@click.option('--name', type=str, prompt=True, help=help_texts['name'])
+@click.option('--get_info', is_flag=True, help=help_texts['get_info'])
 @click.pass_context
 def get(ctx, name, get_info):
     """Get an existing password from the manager."""
@@ -38,9 +46,15 @@ def get(ctx, name, get_info):
 
 
 @cli.command()
-@click.option('--name', type=str, prompt=True)
-@click.option('--info', type=str, prompt=True)
-@click.option('--password', type=str, prompt=True, hide_input=True)
+@click.option('--name', type=str, prompt=True, help=help_texts['name'])
+@click.option('--info', type=str, prompt=True, help=help_texts['info'])
+@click.option(
+    '--password',
+    type=str,
+    prompt=True,
+    hide_input=True,
+    help=help_texts['password']
+)
 @click.pass_context
 def new(ctx, name, info, password):
     """Add a new password to the manager."""
@@ -51,7 +65,7 @@ def new(ctx, name, info, password):
 
 
 @cli.command()
-@click.option('--name', type=str, prompt=True)
+@click.option('--name', type=str, prompt=True, help=help_texts['name'])
 @click.pass_context
 def delete(ctx, name):
     """Delete an existing password from the manager."""
