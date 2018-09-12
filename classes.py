@@ -58,10 +58,7 @@ class PasswordManager:
         return True
 
     def get(self, name):
-        _, enc_info, enc_password = self.c.execute(
-            'SELECT * FROM passwords WHERE name = :name',
-            {'name': name}
-        ).fetchone()
+        _, enc_info, enc_password = self._select_password(name)
         f = Fernet(self.data_enc_key)
         info = f.decrypt(enc_info.encode()).decode()
         password = f.decrypt(enc_password.encode()).decode()
@@ -89,6 +86,12 @@ class PasswordManager:
 
     def _select_user(self):
         return self.c.execute('SELECT * FROM user').fetchone()
+
+    def _select_password(self, name):
+        return self.c.execute(
+            'SELECT * FROM passwords WHERE name = :name',
+            {'name': name}
+        ).fetchone()
 
     @staticmethod
     def _derive_data_enc_key(salt, master_password):
