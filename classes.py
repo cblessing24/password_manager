@@ -70,7 +70,9 @@ class PasswordManager:
                 })
 
     def delete(self, name):
-        pass
+        with self.conn:
+            self.c.execute(
+                'DELETE FROM passwords WHERE name = :name', {'name': name})
 
     def _select_user(self):
         return self.c.execute('SELECT * FROM user').fetchone()
