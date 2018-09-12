@@ -45,4 +45,7 @@ def new(ctx, name, info, password):
 @click.option('--name', type=str, prompt=True)
 @click.pass_context
 def delete(ctx, name):
+    if name not in ctx.obj:
+        ctx.fail(f'A password with the name "{name}" does not exist.')
     ctx.obj.delete(name)
+    click.echo('Password deleted.')
