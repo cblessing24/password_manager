@@ -75,9 +75,9 @@ def delete(ctx, name):
     click.echo('Password deleted.')
 
 
-@cli.command()
+@cli.command('list')
 @click.pass_context
-def list(ctx):
+def list_(ctx):
     """List all passwords in the password manager."""
     for name in ctx.obj:
         click.echo(name)
