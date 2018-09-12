@@ -52,9 +52,6 @@ class PasswordManager:
                 salt, master_password)
             self.data_enc_key = Fernet(key_enc_key).decrypt(enc_data_enc_key)
 
-    def authenticate(self, master_password):
-        pass
-
     def get(self, name):
         pass
 
