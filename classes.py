@@ -56,7 +56,19 @@ class PasswordManager:
         pass
 
     def new(self, name, info, password):
-        pass
+        f = Fernet(self.data_enc_key)
+        enc_info = f.encrypt(info.encode()).decode()
+        enc_password = f.encrypt(password.encode()).decode()
+        with self.conn:
+            self.c.execute('''INSERT INTO passwords VALUES (
+            :name,
+            :enc_info,
+            :enc_password
+            )''', {
+                'name': name,
+                'enc_info': enc_info,
+                'enc_password': enc_password
+                })
 
     def delete(self, name):
         pass
