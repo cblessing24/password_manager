@@ -9,16 +9,24 @@ from cryptography.fernet import Fernet, InvalidToken
 
 
 class PasswordManager:
+    """A password managing class.
+
+    Attributes:
+        user_exists: A boolean indicating if a already user exists or not.
+        data_enc_key: A key that is used to encrypt/decrypt passwords. Only
+            available after "authenticate" method has been run.
+    """
 
     def __init__(self):
-        self.conn = sqlite3.connect('password_manager.db')
-        self.c = self.conn.cursor()
-        with self.conn:
-            self.c.execute('''CREATE TABLE IF NOT EXISTS user (
+        """Initializes PasswordManager"""
+        self._conn = sqlite3.connect('password_manager.db')
+        self._c = self._conn.cursor()
+        with self._conn:
+            self._c.execute('''CREATE TABLE IF NOT EXISTS user (
             salt text,
             enc_data_enc_key text
             )''')
-            self.c.execute('''CREATE TABLE IF NOT EXISTS passwords (
+            self._c.execute('''CREATE TABLE IF NOT EXISTS passwords (
             name text,
             enc_info text,
             enc_password text
@@ -30,6 +38,14 @@ class PasswordManager:
         self.data_enc_key = None
 
     def authenticate(self, master_password):
+        """Authenticate the user.
+
+        Args:
+            master_password: A string, the user's master password.
+
+        Returns:
+            True if the authentication was successful, otherwise False.
+        """
         if not self.user_exists:
             salt = os.urandom(16)
             key_enc_key = PasswordManager._derive_data_enc_key(
@@ -37,8 +53,8 @@ class PasswordManager:
             self.data_enc_key = Fernet.generate_key()
             enc_data_enc_key = Fernet(
                 key_enc_key).encrypt(self.data_enc_key)
-            with self.conn:
-                self.c.execute('''INSERT INTO user VALUES (
+            with self._conn:
+                self._c.execute('''INSERT INTO user VALUES (
                 :salt, 
                 :enc_data_enc_key
                 )''', {
@@ -58,6 +74,15 @@ class PasswordManager:
         return True
 
     def get(self, name):
+        """Get a password from the manager.
+
+        Args:
+            name: A string, the name associated with the requested password.
+
+        Returns:
+            Two strings, the info and the password associated with the
+            requested name.
+        """
         _, enc_info, enc_password = self._select_password(name)
         f = Fernet(self.data_enc_key)
         info = f.decrypt(enc_info.encode()).decode()
@@ -68,8 +93,8 @@ class PasswordManager:
         f = Fernet(self.data_enc_key)
         enc_info = f.encrypt(info.encode()).decode()
         enc_password = f.encrypt(password.encode()).decode()
-        with self.conn:
-            self.c.execute('''INSERT INTO passwords VALUES (
+        with self._conn:
+            self._c.execute('''INSERT INTO passwords VALUES (
             :name,
             :enc_info,
             :enc_password
@@ -80,15 +105,24 @@ class PasswordManager:
                 })
 
     def delete(self, name):
-        with self.conn:
-            self.c.execute(
+        """Deletes a password from the manager.
+
+        Args:
+            name: A string, the name associated with the to be deleted
+                password.
+
+        Returns:
+            None.
+        """
+        with self._conn:
+            self._c.execute(
                 'DELETE FROM passwords WHERE name = :name', {'name': name})
 
     def _select_user(self):
-        return self.c.execute('SELECT * FROM user').fetchone()
+        return self._c.execute('SELECT * FROM user').fetchone()
 
     def _select_password(self, name):
-        return self.c.execute(
+        return self._c.execute(
             'SELECT * FROM passwords WHERE name = :name',
             {'name': name}
         ).fetchone()
