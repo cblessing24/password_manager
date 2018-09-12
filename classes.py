@@ -31,7 +31,7 @@ class PasswordManager:
             enc_info text,
             enc_password text
             )''')
-        if not self.c.execute('SELECT * FROM user').fetchone():
+        if not self._select_user():
             salt = os.urandom(16)
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
@@ -46,8 +46,7 @@ class PasswordManager:
                     'enc_data_enc_key': enc_data_enc_key.decode()
                     })
         else:
-            salt, enc_data_enc_key = self.c.execute(
-                'SELECT * FROM user').fetchone()
+            salt, enc_data_enc_key = self._select_user()
             enc_data_enc_key = enc_data_enc_key.encode()
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
@@ -64,6 +63,9 @@ class PasswordManager:
 
     def delete(self, name):
         pass
+
+    def _select_user(self):
+        return self.c.execute('SELECT * FROM user').fetchone()
 
     @staticmethod
     def _derive_data_enc_key(salt, master_password):
