@@ -35,7 +35,7 @@ class PasswordManager:
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
             self.data_enc_key = Fernet.generate_key()
-            self.enc_data_enc_key = Fernet(
+            enc_data_enc_key = Fernet(
                 key_enc_key).encrypt(self.data_enc_key)
             with self.conn:
                 self.c.execute('''INSERT INTO user VALUES (
@@ -43,7 +43,7 @@ class PasswordManager:
                 :enc_data_enc_key
                 )''', {
                     'salt': base64.urlsafe_b64encode(salt).decode(),
-                    'enc_data_enc_key': self.enc_data_enc_key.decode()
+                    'enc_data_enc_key': enc_data_enc_key.decode()
                     })
         else:
             salt, enc_data_enc_key = self._select_user()
@@ -55,7 +55,7 @@ class PasswordManager:
                     key_enc_key).decrypt(enc_data_enc_key)
             except InvalidToken:
                 return False
-            return True
+        return True
 
     def get(self, name):
         _, enc_info, enc_password = self.c.execute(
