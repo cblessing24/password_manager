@@ -8,7 +8,8 @@ setup(
     install_requires=[
         'Click',
         'clipboard',
-        'cryptography'
+        'cryptography',
+        'pyperclip'
     ],
     entry_points='''
       [console_scripts]
