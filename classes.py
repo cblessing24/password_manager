@@ -8,14 +8,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.fernet import Fernet
 
 
-class Password:
-
-    def __init__(self, name, info, password):
-        self.name = name
-        self.info = info
-        self.password = password
-
-
 class PasswordManager:
 
     def __init__(self, master_password):
