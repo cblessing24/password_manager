@@ -1,4 +1,5 @@
 import click
+import pyperclip
 
 from classes import PasswordManager
 
@@ -24,6 +25,8 @@ def get(ctx, name):
     if name not in ctx.obj:
         ctx.fail(f'A password with the name "{name}" does not exist.')
     info, password = ctx.obj.get(name)
+    pyperclip.copy(password)
+    click.echo('Password copied to clipboard.')
 
 
 @cli.command()
