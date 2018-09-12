@@ -7,6 +7,7 @@ from classes import PasswordManager
 @click.group()
 @click.pass_context
 def cli(ctx):
+    """Manage your passwords."""
     ctx.obj = PasswordManager()
     master_password = click.prompt(
         'Master password', type=str, hide_input=True)
@@ -24,6 +25,7 @@ def cli(ctx):
 @click.option('--get_info', is_flag=True)
 @click.pass_context
 def get(ctx, name, get_info):
+    """Get an existing password from the manager."""
     if name not in ctx.obj:
         ctx.fail(f'A password with the name "{name}" does not exist.')
     info, password = ctx.obj.get(name)
@@ -41,6 +43,7 @@ def get(ctx, name, get_info):
 @click.option('--password', type=str, prompt=True, hide_input=True)
 @click.pass_context
 def new(ctx, name, info, password):
+    """Add a new password to the manager."""
     if name in ctx.obj:
         ctx.fail(f'A password with the name "{name}" already exists.')
     ctx.obj.new(name, info, password)
@@ -51,6 +54,7 @@ def new(ctx, name, info, password):
 @click.option('--name', type=str, prompt=True)
 @click.pass_context
 def delete(ctx, name):
+    """Delete an existing password from the manager."""
     if name not in ctx.obj:
         ctx.fail(f'A password with the name "{name}" does not exist.')
     ctx.obj.delete(name)
