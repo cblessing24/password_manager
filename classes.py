@@ -171,6 +171,15 @@ class PasswordManager:
             return True
         return False
 
+    def __iter__(self):
+        passwords = self._c.execute('SELECT * FROM passwords')
+        while True:
+            password = passwords.fetchone()
+            if password is None:
+                break
+            name, _, _ = password
+            yield name
+
 
 def main():
     pass
