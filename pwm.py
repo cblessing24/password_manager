@@ -5,10 +5,11 @@ from classes import PasswordManager
 
 
 @click.group()
-@click.option('--master_password', type=str, prompt=True, hide_input=True)
 @click.pass_context
-def cli(ctx, master_password):
+def cli(ctx):
     ctx.obj = PasswordManager()
+    master_password = click.prompt(
+        'Master password', type=str, hide_input=True)
     if not ctx.obj.user_exists:
         repeated_master_password = click.prompt(
             'Repeat for confirmation', type=str, hide_input=True)
