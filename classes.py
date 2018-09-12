@@ -172,7 +172,7 @@ class PasswordManager:
         return False
 
     def __iter__(self):
-        passwords = self._c.execute('SELECT * FROM passwords')
+        passwords = self._c.execute('SELECT * FROM passwords ORDER BY name')
         while True:
             password = passwords.fetchone()
             if password is None:
