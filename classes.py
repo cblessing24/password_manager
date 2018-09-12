@@ -33,15 +33,8 @@ class PasswordManager:
             )''')
         if not self.c.execute('SELECT * FROM user').fetchone():
             salt = os.urandom(16)
-            key_derivation_func = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
-                backend=default_backend()
-            )
-            key_enc_key = base64.urlsafe_b64encode(
-                key_derivation_func.derive(master_password.encode()))
+            key_enc_key = PasswordManager._derive_data_enc_key(
+                salt, master_password)
             data_enc_key = Fernet.generate_key()
             enc_data_enc_key = Fernet(key_enc_key).encrypt(data_enc_key)
             with self.conn:
@@ -53,21 +46,12 @@ class PasswordManager:
                     'enc_data_enc_key': enc_data_enc_key.decode()
                     })
         else:
-            salt, enc_data_enc_key =  self.c.execute(
+            salt, enc_data_enc_key = self.c.execute(
                 'SELECT * FROM user').fetchone()
-            salt = base64.urlsafe_b64decode(salt.encode())
             enc_data_enc_key = enc_data_enc_key.encode()
-            key_derivation_func = PBKDF2HMAC(
-                algorithm=hashes.SHA256(),
-                length=32,
-                salt=salt,
-                iterations=100000,
-                backend=default_backend()
-            )
-            key_enc_key = base64.urlsafe_b64encode(
-                key_derivation_func.derive(master_password.encode()))
+            key_enc_key = PasswordManager._derive_data_enc_key(
+                salt, master_password)
             self.data_enc_key = Fernet(key_enc_key).decrypt(enc_data_enc_key)
-
 
     def authenticate(self, master_password):
         pass
@@ -80,3 +64,17 @@ class PasswordManager:
 
     def delete(self, name):
         pass
+
+    @staticmethod
+    def _derive_data_enc_key(salt, master_password):
+        if isinstance(salt, str):
+            salt = base64.urlsafe_b64decode(salt.encode())
+        key_derivation_func = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        return base64.urlsafe_b64encode(
+            key_derivation_func.derive(master_password.encode()))
