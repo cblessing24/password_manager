@@ -34,15 +34,16 @@ class PasswordManager:
             salt = os.urandom(16)
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
-            data_enc_key = Fernet.generate_key()
-            enc_data_enc_key = Fernet(key_enc_key).encrypt(data_enc_key)
+            self.data_enc_key = Fernet.generate_key()
+            self.enc_data_enc_key = Fernet(
+                key_enc_key).encrypt(self.data_enc_key)
             with self.conn:
                 self.c.execute('''INSERT INTO user VALUES (
                 :salt, 
                 :enc_data_enc_key
                 )''', {
                     'salt': base64.urlsafe_b64encode(salt).decode(),
-                    'enc_data_enc_key': enc_data_enc_key.decode()
+                    'enc_data_enc_key': self.enc_data_enc_key.decode()
                     })
         else:
             salt, enc_data_enc_key = self._select_user()
