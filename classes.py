@@ -96,12 +96,25 @@ class PasswordManager:
             requested name.
         """
         _, enc_info, enc_password = self._select_password(name)
+        # Decrypt the encrypted info and password using the data encryption
+        # key.
         f = Fernet(self.data_enc_key)
         info = f.decrypt(enc_info.encode()).decode()
         password = f.decrypt(enc_password.encode()).decode()
         return info, password
 
     def new(self, name, info, password):
+        """Add a new password to the manager.
+
+        Args:
+            name: A string, the name for the new password.
+            info: A string, the info associated with the new password.
+            password: A string, the new password.
+
+        Returns:
+            None.
+        """
+        # Encrypt the info and password  using the data encryption key.
         f = Fernet(self.data_enc_key)
         enc_info = f.encrypt(info.encode()).decode()
         enc_password = f.encrypt(password.encode()).decode()
