@@ -5,7 +5,7 @@ import base64
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 
 class PasswordManager:
@@ -50,7 +50,12 @@ class PasswordManager:
             enc_data_enc_key = enc_data_enc_key.encode()
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
-            self.data_enc_key = Fernet(key_enc_key).decrypt(enc_data_enc_key)
+            try:
+                self.data_enc_key = Fernet(
+                    key_enc_key).decrypt(enc_data_enc_key)
+            except InvalidToken:
+                return False
+            return True
 
     def get(self, name):
         _, enc_info, enc_password = self.c.execute(

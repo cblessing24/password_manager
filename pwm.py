@@ -13,7 +13,8 @@ def cli(ctx, master_password):
             'Repeat for confirmation', type=str, hide_input=True)
         if repeated_master_password != master_password:
             ctx.fail('The two passwords do not match.')
-    ctx.obj.authenticate(master_password)
+    if not ctx.obj.authenticate(master_password):
+        ctx.fail('Incorrect password.')
 
 
 @cli.command()
