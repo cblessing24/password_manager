@@ -106,3 +106,16 @@ class PasswordManager:
         )
         return base64.urlsafe_b64encode(
             key_derivation_func.derive(master_password.encode()))
+
+    def __contains__(self, name):
+        if self._select_password(name):
+            return True
+        return False
+
+
+def main():
+    pass
+
+
+if __name__ == '__main__':
+    main()
