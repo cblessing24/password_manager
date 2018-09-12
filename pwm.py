@@ -35,7 +35,10 @@ def get(ctx, name):
 @click.option('--password', type=str, prompt=True)
 @click.pass_context
 def new(ctx, name, info, password):
+    if name in ctx.obj:
+        ctx.fail(f'A password with the name "{name}" already exists.')
     ctx.obj.new(name, info, password)
+    click.echo('New password added.')
 
 
 @cli.command()
