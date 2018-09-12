@@ -73,3 +73,11 @@ def delete(ctx, name):
         ctx.fail(f'A password with the name "{name}" does not exist.')
     ctx.obj.delete(name)
     click.echo('Password deleted.')
+
+
+@cli.command()
+@click.pass_context
+def list(ctx):
+    """List all passwords in the password manager."""
+    for name in ctx.obj:
+        click.echo(name)
