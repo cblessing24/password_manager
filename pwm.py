@@ -20,13 +20,18 @@ def cli(ctx, master_password):
 
 @cli.command()
 @click.option('--name', type=str, prompt=True)
+@click.option('--get_info', is_flag=True)
 @click.pass_context
-def get(ctx, name):
+def get(ctx, name, get_info):
     if name not in ctx.obj:
         ctx.fail(f'A password with the name "{name}" does not exist.')
     info, password = ctx.obj.get(name)
-    pyperclip.copy(password)
-    click.echo('Password copied to clipboard.')
+    if get_info:
+        pyperclip.copy(info)
+        click.echo('Info copied to clipboard.')
+    else:
+        pyperclip.copy(password)
+        click.echo('Password copied to clipboard.')
 
 
 @cli.command()
