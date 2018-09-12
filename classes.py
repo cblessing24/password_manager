@@ -45,7 +45,14 @@ class PasswordManager:
             self.data_enc_key = Fernet(key_enc_key).decrypt(enc_data_enc_key)
 
     def get(self, name):
-        pass
+        _, enc_info, enc_password = self.c.execute(
+            'SELECT * FROM passwords WHERE name = :name',
+            {'name': name}
+        ).fetchone()
+        f = Fernet(self.data_enc_key)
+        info = f.decrypt(enc_info.encode()).decode()
+        password = f.decrypt(enc_password.encode()).decode()
+        return info, password
 
     def new(self, name, info, password):
         f = Fernet(self.data_enc_key)
