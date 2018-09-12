@@ -27,6 +27,7 @@ class PasswordManager:
             self.user_exists = True
         else:
             self.user_exists = False
+        self.data_enc_key = None
 
     def authenticate(self, master_password):
         if not self.user_exists:
