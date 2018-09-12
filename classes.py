@@ -46,13 +46,19 @@ class PasswordManager:
         Returns:
             True if the authentication was successful, otherwise False.
         """
+        # Run initial setup if no user exists.
         if not self.user_exists:
             salt = os.urandom(16)
+            # Derive the key encryption key from the user's master password.
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
+            # Generate static data encryption key.
             self.data_enc_key = Fernet.generate_key()
+            # Encrypt the data encryption key using the key encryption key.
             enc_data_enc_key = Fernet(
                 key_enc_key).encrypt(self.data_enc_key)
+            # Add the encrypted data encryption key and the salt to the user
+            # table.
             with self._conn:
                 self._c.execute('''INSERT INTO user VALUES (
                 :salt, 
@@ -61,11 +67,17 @@ class PasswordManager:
                     'salt': base64.urlsafe_b64encode(salt).decode(),
                     'enc_data_enc_key': enc_data_enc_key.decode()
                     })
+        # Run this code if a user already exists.
         else:
+            # Retrieve the user's salt and encrypted data encryption key from
+            # the user table.
             salt, enc_data_enc_key = self._select_user()
             enc_data_enc_key = enc_data_enc_key.encode()
+            # Derive the key encryption key from the user's master password.
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
+            # Try to decrypt the encrypted data encryption key using the key
+            # encryption key. Return False if this fails.
             try:
                 self.data_enc_key = Fernet(
                     key_enc_key).decrypt(enc_data_enc_key)
