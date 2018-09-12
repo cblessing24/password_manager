@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet
 
 class PasswordManager:
 
-    def __init__(self, master_password):
+    def __init__(self):
         self.conn = sqlite3.connect('password_manager.db')
         self.c = self.conn.cursor()
         with self.conn:
@@ -23,7 +23,13 @@ class PasswordManager:
             enc_info text,
             enc_password text
             )''')
-        if not self._select_user():
+        if self._select_user():
+            self.user_exists = True
+        else:
+            self.user_exists = False
+
+    def authenticate(self, master_password):
+        if not self.user_exists:
             salt = os.urandom(16)
             key_enc_key = PasswordManager._derive_data_enc_key(
                 salt, master_password)
