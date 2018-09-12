@@ -32,7 +32,7 @@ def get(ctx, name):
 @cli.command()
 @click.option('--name', type=str, prompt=True)
 @click.option('--info', type=str, prompt=True)
-@click.option('--password', type=str, prompt=True)
+@click.option('--password', type=str, prompt=True, hide_input=True)
 @click.pass_context
 def new(ctx, name, info, password):
     if name in ctx.obj:
