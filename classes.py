@@ -152,6 +152,12 @@ class PasswordManager:
             {'name': name}
         ).fetchone()
 
+    def reset(self):
+        """Deletes the user and any passwords in the manager."""
+        with self._conn:
+            self._c.execute('DELETE FROM user')
+            self._c.execute('DELETE FROM passwords')
+
     @staticmethod
     def _derive_data_enc_key(salt, master_password):
         if isinstance(salt, str):

@@ -81,3 +81,14 @@ def list_(ctx):
     """List all passwords in the password manager."""
     for name in ctx.obj:
         click.echo(name)
+
+
+@cli.command()
+@click.pass_context
+def reset(ctx):
+    """Reset the password manager."""
+    if click.confirm('Are you sure?'):
+        ctx.obj.reset()
+        click.echo('Reset successful.')
+    else:
+        click.echo('Aborted!')
