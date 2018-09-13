@@ -14,11 +14,10 @@ help_texts = {
 
 @click.group()
 @click.pass_context
-def cli(ctx):
+@click.option('--master_password', type=str, prompt=True, hide_input=True)
+def cli(ctx, master_password):
     """Manage your passwords."""
     ctx.obj = PasswordManager()
-    master_password = click.prompt(
-        'Master password', type=str, hide_input=True)
     if not ctx.obj.user_exists:
         repeated_master_password = click.prompt(
             'Repeat for confirmation', type=str, hide_input=True)
