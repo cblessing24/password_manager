@@ -14,8 +14,7 @@ class PasswordManager:
 
     Attributes:
         user_exists: A boolean indicating if a already user exists or not.
-        data_enc_key: A key that is used to encrypt/decrypt passwords. Only
-            available after "authenticate" method has been run.
+        user: An instance of the User class.
     """
 
     def __init__(self):
@@ -36,7 +35,7 @@ class PasswordManager:
             self.user_exists = True
         else:
             self.user_exists = False
-        self.user = None
+        self.user: Optional[User] = None
 
     def authenticate(self, master_password: str) -> bool:
         """Authenticate the user.
@@ -47,22 +46,27 @@ class PasswordManager:
         Returns:
             True if the authentication was successful, otherwise False.
         """
-        # Run initial setup if no user exists.
         if self.user_exists:
             # Retrieve the user's salt and encrypted data encryption key from
             # the user table.
             salt, enc_data_enc_key = self._select_user()
             salt = base64.urlsafe_b64decode(salt.encode())
             enc_data_enc_key = enc_data_enc_key.encode()
+            # Initialize an instance of the user class using the retrieved
+            # data.
             self.user = User(salt, enc_data_enc_key, master_password)
+            # User instance's success attribute is False if the password was
+            # incorrect.
             if self.user.success:
                 return True
             else:
                 return False
         else:
+            # Initialize a completely new user by just passing the master
+            # password to the User constructor.
             self.user = User(master_password=master_password)
-            # Add the encrypted data encryption key and the salt to the user
-            # table.
+            # Add the encrypted data encryption key and the salt of the User
+            # instance to the user table.
             if self.user.success:
                 with self._conn:
                     self._c.execute('''INSERT INTO user VALUES (
@@ -88,8 +92,6 @@ class PasswordManager:
             requested name.
         """
         _, enc_info, enc_password = self._select_password(name)
-        # Decrypt the encrypted info and password using the data encryption
-        # key.
         info = self.user.decrypt(enc_info.encode())
         password = self.user.decrypt(enc_password.encode())
         return info, password
@@ -105,7 +107,6 @@ class PasswordManager:
         Returns:
             None.
         """
-        # Encrypt the info and password  using the data encryption key.
         enc_info = self.user.encrypt(info)
         enc_password = self.user.encrypt(password)
         with self._conn:
