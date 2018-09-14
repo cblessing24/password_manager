@@ -8,6 +8,7 @@ help_texts = {
     'name': 'The name associated with the password.',
     'info': 'The info associated with the password.',
     'password': 'The password.',
+    'new_password': 'The new password.',
     'get_info': 'Copy the info instead of the password to the clipboard.'
 }
 
@@ -91,3 +92,18 @@ def reset(ctx):
         click.echo('Reset successful.')
     else:
         click.echo('Aborted!')
+
+
+@cli.command()
+@click.option(
+    '--new_password',
+    type=str,
+    prompt=True,
+    help=help_texts['new_password'],
+    hide_input=True
+)
+@click.pass_context
+def change_password(ctx, new_password):
+    """Change your master password."""
+    ctx.obj.change_password(new_password)
+    click.echo('Master password changed.')
