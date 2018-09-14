@@ -134,6 +134,28 @@ class PasswordManager:
             self._c.execute(
                 'DELETE FROM passwords WHERE name = :name', {'name': name})
 
+    def reset(self) -> None:
+        """Deletes the user and any passwords in the manager."""
+        with self._conn:
+            self._c.execute('DELETE FROM user')
+            self._c.execute('DELETE FROM passwords')
+
+    def change_master_password(self, new_master_password: str) -> None:
+        """Change the user's master password.
+
+        Args:
+            new_master_password: A string, the new master password.
+
+        Returns:
+            None.
+        """
+        self.user.change_password(new_master_password)
+        with self._conn:
+            self._c.execute(
+                'UPDATE user SET enc_data_enc_key = :enc_data_enc_key',
+                {'enc_data_enc_key': self.user.enc_data_enc_key.decode()}
+            )
+
     def _select_user(self):
         return self._c.execute('SELECT * FROM user').fetchone()
 
@@ -142,12 +164,6 @@ class PasswordManager:
             'SELECT * FROM passwords WHERE name = :name',
             {'name': name}
         ).fetchone()
-
-    def reset(self) -> None:
-        """Deletes the user and any passwords in the manager."""
-        with self._conn:
-            self._c.execute('DELETE FROM user')
-            self._c.execute('DELETE FROM passwords')
 
     def __contains__(self, name: str) -> bool:
         if self._select_password(name):
@@ -244,7 +260,7 @@ class User:
         """Change the master password of the user.
 
         Args:
-            new_password: A string, the new master password.
+            new_password: A string, the new password.
 
         Returns:
             None.
