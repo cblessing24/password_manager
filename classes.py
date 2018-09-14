@@ -140,16 +140,16 @@ class PasswordManager:
             self._c.execute('DELETE FROM user')
             self._c.execute('DELETE FROM passwords')
 
-    def change_master_password(self, new_master_password: str) -> None:
+    def change_password(self, new_password: str) -> None:
         """Change the user's master password.
 
         Args:
-            new_master_password: A string, the new master password.
+            new_password: A string, the new master password.
 
         Returns:
             None.
         """
-        self.user.change_password(new_master_password)
+        self.user.change_password(new_password)
         with self._conn:
             self._c.execute(
                 'UPDATE user SET enc_data_enc_key = :enc_data_enc_key',
