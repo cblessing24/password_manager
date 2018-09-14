@@ -240,6 +240,18 @@ class User:
         """Decrypt a token using the user's data encryption key."""
         return Fernet(self.data_enc_key).decrypt(token).decode()
 
+    def change_password(self, new_password: str) -> None:
+        """Change the master password of the user.
+
+        Args:
+            new_password: A string, the new master password.
+
+        Returns:
+            None.
+        """
+        key_enc_key = User._derive_data_enc_key(self.salt, new_password)
+        self.enc_data_enc_key = Fernet(key_enc_key).encrypt(self.data_enc_key)
+
     @staticmethod
     def _derive_data_enc_key(salt: bytes, master_password: str) -> bytes:
         key_derivation_func = PBKDF2HMAC(
