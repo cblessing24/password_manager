@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import base64
-from typing import Optional
+from typing import Optional, Tuple
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
@@ -81,7 +81,7 @@ class PasswordManager:
             else:
                 return False
 
-    def get(self, name):
+    def get(self, name: str) -> Tuple[str, str]:
         """Get a password from the manager.
 
         Args:
@@ -96,7 +96,7 @@ class PasswordManager:
         password = self.user.decrypt(enc_password.encode())
         return info, password
 
-    def new(self, name, info, password):
+    def new(self, name: str, info: str, password: str) -> None:
         """Add a new password to the manager.
 
         Args:
@@ -120,7 +120,7 @@ class PasswordManager:
                 'enc_password': enc_password.decode()
                 })
 
-    def delete(self, name):
+    def delete(self, name: str) -> None:
         """Deletes a password from the manager.
 
         Args:
@@ -143,18 +143,18 @@ class PasswordManager:
             {'name': name}
         ).fetchone()
 
-    def reset(self):
+    def reset(self) -> None:
         """Deletes the user and any passwords in the manager."""
         with self._conn:
             self._c.execute('DELETE FROM user')
             self._c.execute('DELETE FROM passwords')
 
-    def __contains__(self, name):
+    def __contains__(self, name: str) -> bool:
         if self._select_password(name):
             return True
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> str:
         passwords = self._c.execute('SELECT * FROM passwords ORDER BY name')
         while True:
             password = passwords.fetchone()
