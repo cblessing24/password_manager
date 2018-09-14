@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import base64
+from typing import Optional
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
@@ -35,9 +36,9 @@ class PasswordManager:
             self.user_exists = True
         else:
             self.user_exists = False
-        self.data_enc_key = None
+        self.user = None
 
-    def authenticate(self, master_password):
+    def authenticate(self, master_password: str) -> bool:
         """Authenticate the user.
 
         Args:
@@ -47,43 +48,34 @@ class PasswordManager:
             True if the authentication was successful, otherwise False.
         """
         # Run initial setup if no user exists.
-        if not self.user_exists:
-            salt = os.urandom(16)
-            # Derive the key encryption key from the user's master password.
-            key_enc_key = PasswordManager._derive_data_enc_key(
-                salt, master_password)
-            # Generate static data encryption key.
-            self.data_enc_key = Fernet.generate_key()
-            # Encrypt the data encryption key using the key encryption key.
-            enc_data_enc_key = Fernet(
-                key_enc_key).encrypt(self.data_enc_key)
-            # Add the encrypted data encryption key and the salt to the user
-            # table.
-            with self._conn:
-                self._c.execute('''INSERT INTO user VALUES (
-                :salt, 
-                :enc_data_enc_key
-                )''', {
-                    'salt': base64.urlsafe_b64encode(salt).decode(),
-                    'enc_data_enc_key': enc_data_enc_key.decode()
-                    })
-        # Run this code if a user already exists.
-        else:
+        if self.user_exists:
             # Retrieve the user's salt and encrypted data encryption key from
             # the user table.
             salt, enc_data_enc_key = self._select_user()
+            salt = base64.urlsafe_b64decode(salt.encode())
             enc_data_enc_key = enc_data_enc_key.encode()
-            # Derive the key encryption key from the user's master password.
-            key_enc_key = PasswordManager._derive_data_enc_key(
-                salt, master_password)
-            # Try to decrypt the encrypted data encryption key using the key
-            # encryption key. Return False if this fails.
-            try:
-                self.data_enc_key = Fernet(
-                    key_enc_key).decrypt(enc_data_enc_key)
-            except InvalidToken:
+            self.user = User(salt, enc_data_enc_key, master_password)
+            if self.user.success:
+                return True
+            else:
                 return False
-        return True
+        else:
+            self.user = User(master_password=master_password)
+            # Add the encrypted data encryption key and the salt to the user
+            # table.
+            if self.user.success:
+                with self._conn:
+                    self._c.execute('''INSERT INTO user VALUES (
+                                :salt, 
+                                :enc_data_enc_key
+                                )''', {
+                        'salt': base64.urlsafe_b64encode(
+                            self.user.salt).decode(),
+                        'enc_data_enc_key': self.user.enc_data_enc_key.decode()
+                    })
+                return True
+            else:
+                return False
 
     def get(self, name):
         """Get a password from the manager.
@@ -98,9 +90,8 @@ class PasswordManager:
         _, enc_info, enc_password = self._select_password(name)
         # Decrypt the encrypted info and password using the data encryption
         # key.
-        f = Fernet(self.data_enc_key)
-        info = f.decrypt(enc_info.encode()).decode()
-        password = f.decrypt(enc_password.encode()).decode()
+        info = self.user.decrypt(enc_info.encode())
+        password = self.user.decrypt(enc_password.encode())
         return info, password
 
     def new(self, name, info, password):
@@ -115,9 +106,8 @@ class PasswordManager:
             None.
         """
         # Encrypt the info and password  using the data encryption key.
-        f = Fernet(self.data_enc_key)
-        enc_info = f.encrypt(info.encode()).decode()
-        enc_password = f.encrypt(password.encode()).decode()
+        enc_info = self.user.encrypt(info)
+        enc_password = self.user.encrypt(password)
         with self._conn:
             self._c.execute('''INSERT INTO passwords VALUES (
             :name,
@@ -125,8 +115,8 @@ class PasswordManager:
             :enc_password
             )''', {
                 'name': name,
-                'enc_info': enc_info,
-                'enc_password': enc_password
+                'enc_info': enc_info.decode(),
+                'enc_password': enc_password.decode()
                 })
 
     def delete(self, name):
@@ -185,6 +175,67 @@ class PasswordManager:
                 break
             name, _, _ = password
             yield name
+
+
+class User:
+
+    def __init__(
+            self,
+            salt: Optional[bytes] = None,
+            enc_data_enc_key: Optional[bytes] = None,
+            master_password: Optional[str] = None
+    ):
+        if (salt is None and enc_data_enc_key is None and
+                master_password is not None):
+            initialized = False
+        elif (salt is not None and enc_data_enc_key is not None and
+              master_password is not None):
+            initialized = True
+        else:
+            raise RuntimeError('Incorrect combination of arguments passed.')
+        if initialized:
+            # Derive the key encryption key from the user's master password.
+            key_enc_key = PasswordManager._derive_data_enc_key(
+                salt, master_password)
+            # Try to decrypt the encrypted data encryption key using the key
+            # encryption key.
+            try:
+                self.data_enc_key: bytes = Fernet(
+                    key_enc_key).decrypt(enc_data_enc_key)
+            except InvalidToken:
+                self.success = False
+            else:
+                self.success = True
+        else:
+            salt = os.urandom(16)
+            # Derive the key encryption key from the user's master password.
+            key_enc_key = PasswordManager._derive_data_enc_key(
+                salt, master_password)
+            # Generate static data encryption key.
+            self.data_enc_key: bytes = Fernet.generate_key()
+            # Encrypt the data encryption key using the key encryption key.
+            enc_data_enc_key = Fernet(key_enc_key).encrypt(self.data_enc_key)
+            self.success = True
+        self.salt: bytes = salt
+        self.enc_data_enc_key: bytes = enc_data_enc_key
+
+    def encrypt(self, data: str) -> bytes:
+        return Fernet(self.data_enc_key).encrypt(data.encode())
+
+    def decrypt(self, token: bytes) -> str:
+        return Fernet(self.data_enc_key).decrypt(token).decode()
+
+    @staticmethod
+    def _derive_data_enc_key(salt: bytes, master_password: str) -> bytes:
+        key_derivation_func = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
+            backend=default_backend()
+        )
+        return base64.urlsafe_b64encode(
+            key_derivation_func.derive(master_password.encode()))
 
 
 def main():
