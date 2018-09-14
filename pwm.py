@@ -96,14 +96,15 @@ def reset(ctx):
 
 @cli.command()
 @click.option(
-    '--new_password',
+    '--new_master_password',
     type=str,
     prompt=True,
+    confirmation_prompt=True,
     help=help_texts['new_password'],
     hide_input=True
 )
 @click.pass_context
-def change_password(ctx, new_password):
+def change_password(ctx, new_master_password):
     """Change your master password."""
-    ctx.obj.change_password(new_password)
+    ctx.obj.change_password(new_master_password)
     click.echo('Master password changed.')
