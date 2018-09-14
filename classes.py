@@ -165,6 +165,16 @@ class PasswordManager:
 
 
 class User:
+    """A class that represents a user of the password manager.
+
+    Attributes:
+        success: Bool, True if the initialization was successful, false
+            otherwise.
+        salt: Bytes, the user's salt.
+        data_enc_key: Bytes, the data encryption key used to encrypt/decrypt
+            the user's passwords.
+        enc_data_enc_key: Bytes, the user's encrypted data encryption key.
+    """
 
     def __init__(
             self,
@@ -172,6 +182,20 @@ class User:
             enc_data_enc_key: Optional[bytes] = None,
             master_password: Optional[str] = None
     ):
+        """Initializes User.
+
+        An instance of this class can be initialized with just the master
+        password to create a completely new user. Alternatively a existing user
+        can be reinstated by passing all three arguments.
+
+        Args:
+            salt: Bytes, the user's salt.
+            enc_data_enc_key: Bytes, the user's encrypted data encryption key.
+            master_password: A string, the user's master password or a new
+                password for creating a completely new user.
+        """
+        # Check whether a completely new user should be created or an existing
+        # user reinstated.
         if (salt is None and enc_data_enc_key is None and
                 master_password is not None):
             initialized = False
@@ -181,6 +205,7 @@ class User:
         else:
             raise RuntimeError('Incorrect combination of arguments passed.')
         if initialized:
+            # An existing user should be reinstated.
             # Derive the key encryption key from the user's master password.
             key_enc_key = User._derive_data_enc_key(
                 salt, master_password)
@@ -194,6 +219,7 @@ class User:
             else:
                 self.success = True
         else:
+            # A completely new user should  be created.
             salt = os.urandom(16)
             # Derive the key encryption key from the user's master password.
             key_enc_key = User._derive_data_enc_key(
@@ -207,9 +233,11 @@ class User:
         self.enc_data_enc_key: bytes = enc_data_enc_key
 
     def encrypt(self, data: str) -> bytes:
+        """Encrypt data using the user's data encryption key."""
         return Fernet(self.data_enc_key).encrypt(data.encode())
 
     def decrypt(self, token: bytes) -> str:
+        """Decrypt a token using the user's data encryption key."""
         return Fernet(self.data_enc_key).decrypt(token).decode()
 
     @staticmethod
