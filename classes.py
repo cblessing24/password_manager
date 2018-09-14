@@ -149,20 +149,6 @@ class PasswordManager:
             self._c.execute('DELETE FROM user')
             self._c.execute('DELETE FROM passwords')
 
-    @staticmethod
-    def _derive_data_enc_key(salt, master_password):
-        if isinstance(salt, str):
-            salt = base64.urlsafe_b64decode(salt.encode())
-        key_derivation_func = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
-        )
-        return base64.urlsafe_b64encode(
-            key_derivation_func.derive(master_password.encode()))
-
     def __contains__(self, name):
         if self._select_password(name):
             return True
@@ -196,7 +182,7 @@ class User:
             raise RuntimeError('Incorrect combination of arguments passed.')
         if initialized:
             # Derive the key encryption key from the user's master password.
-            key_enc_key = PasswordManager._derive_data_enc_key(
+            key_enc_key = User._derive_data_enc_key(
                 salt, master_password)
             # Try to decrypt the encrypted data encryption key using the key
             # encryption key.
@@ -210,7 +196,7 @@ class User:
         else:
             salt = os.urandom(16)
             # Derive the key encryption key from the user's master password.
-            key_enc_key = PasswordManager._derive_data_enc_key(
+            key_enc_key = User._derive_data_enc_key(
                 salt, master_password)
             # Generate static data encryption key.
             self.data_enc_key: bytes = Fernet.generate_key()
