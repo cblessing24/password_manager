@@ -13,6 +13,16 @@ help_texts = {
 }
 
 
+def login_required(func):
+    return click.option(
+        '--master_password',
+        type=str,
+        prompt=True,
+        hide_input=True,
+        expose_value=False
+    )(func)
+
+
 @click.group()
 @click.pass_context
 @click.option('--master_password', type=str, prompt=True, hide_input=True)
