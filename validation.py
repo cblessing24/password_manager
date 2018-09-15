@@ -14,7 +14,14 @@ def validate_master_password(ctx, _param, value):
 
 
 def validate_name(ctx, _param, value):
-    """Validates the name."""
+    """Validates the name for a password."""
     if value not in ctx.obj:
         ctx.fail(f'A password with the name "{value}" does not exist.')
+    return value
+
+
+def validate_new_name(ctx, _param, value):
+    """Validates a new name for a new password."""
+    if value in ctx.obj:
+        ctx.fail(f'A password with the name "{value}" already exists.')
     return value
