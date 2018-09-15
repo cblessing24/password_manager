@@ -2,7 +2,7 @@ import click
 import pyperclip
 
 import validation
-from classes import PasswordManager
+from core import PasswordManager
 
 
 help_texts = {
