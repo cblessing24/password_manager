@@ -1,6 +1,7 @@
 import click
 import pyperclip
 
+import validation
 from classes import PasswordManager
 
 
@@ -9,6 +10,7 @@ help_texts = {
     'info': 'The info associated with the password.',
     'password': 'The password.',
     'new_password': 'The new password.',
+    'master_password': 'Your master password.',
     'get_info': 'Copy the info instead of the password to the clipboard.'
 }
 
@@ -19,26 +21,21 @@ def login_required(func):
         type=str,
         prompt=True,
         hide_input=True,
-        expose_value=False
+        expose_value=False,
+        help=help_texts['master_password'],
+        callback=validation.validate_master_password
     )(func)
 
 
 @click.group()
 @click.pass_context
-@click.option('--master_password', type=str, prompt=True, hide_input=True)
-def cli(ctx, master_password):
+def cli(ctx):
     """Manage your passwords."""
     ctx.obj = PasswordManager()
-    if not ctx.obj.user_exists:
-        repeated_master_password = click.prompt(
-            'Repeat for confirmation', type=str, hide_input=True)
-        if repeated_master_password != master_password:
-            ctx.fail('The two passwords do not match.')
-    if not ctx.obj.authenticate(master_password):
-        ctx.fail('Incorrect password.')
 
 
 @cli.command()
+@login_required
 @click.option('--name', type=str, prompt=True, help=help_texts['name'])
 @click.option('--get_info', is_flag=True, help=help_texts['get_info'])
 @click.pass_context
@@ -56,6 +53,7 @@ def get(ctx, name, get_info):
 
 
 @cli.command()
+@login_required
 @click.option('--name', type=str, prompt=True, help=help_texts['name'])
 @click.option('--info', type=str, prompt=True, help=help_texts['info'])
 @click.option(
@@ -75,6 +73,7 @@ def new(ctx, name, info, password):
 
 
 @cli.command()
+@login_required
 @click.option('--name', type=str, prompt=True, help=help_texts['name'])
 @click.pass_context
 def delete(ctx, name):
@@ -94,6 +93,7 @@ def list_(ctx):
 
 
 @cli.command()
+@login_required
 @click.pass_context
 def reset(ctx):
     """Reset the password manager."""
@@ -105,6 +105,7 @@ def reset(ctx):
 
 
 @cli.command()
+@login_required
 @click.option(
     '--new_master_password',
     type=str,
