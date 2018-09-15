@@ -16,6 +16,7 @@ help_texts = {
 
 
 def login_required(func):
+    """Decorates a function to add the master password option."""
     return click.option(
         '--master_password',
         type=str,
@@ -58,7 +59,13 @@ def get(ctx, name, get_info):
 
 @cli.command()
 @login_required
-@click.option('--name', type=str, prompt=True, help=help_texts['name'])
+@click.option(
+    '--name',
+    type=str,
+    prompt=True,
+    help=help_texts['name'],
+    callback=validation.validate_new_name
+)
 @click.option('--info', type=str, prompt=True, help=help_texts['info'])
 @click.option(
     '--password',
@@ -70,8 +77,6 @@ def get(ctx, name, get_info):
 @click.pass_context
 def new(ctx, name, info, password):
     """Add a new password to the manager."""
-    if name in ctx.obj:
-        ctx.fail(f'A password with the name "{name}" already exists.')
     ctx.obj.new(name, info, password)
     click.echo('New password added.')
 
