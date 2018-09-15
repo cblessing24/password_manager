@@ -36,13 +36,17 @@ def cli(ctx):
 
 @cli.command()
 @login_required
-@click.option('--name', type=str, prompt=True, help=help_texts['name'])
+@click.option(
+    '--name',
+    type=str,
+    prompt=True,
+    help=help_texts['name'],
+    callback=validation.validate_name
+)
 @click.option('--get_info', is_flag=True, help=help_texts['get_info'])
 @click.pass_context
 def get(ctx, name, get_info):
     """Get an existing password from the manager."""
-    if name not in ctx.obj:
-        ctx.fail(f'A password with the name "{name}" does not exist.')
     info, password = ctx.obj.get(name)
     if get_info:
         pyperclip.copy(info)
@@ -74,12 +78,16 @@ def new(ctx, name, info, password):
 
 @cli.command()
 @login_required
-@click.option('--name', type=str, prompt=True, help=help_texts['name'])
+@click.option(
+    '--name',
+    type=str,
+    prompt=True,
+    help=help_texts['name'],
+    callback=validation.validate_name
+)
 @click.pass_context
 def delete(ctx, name):
     """Delete an existing password from the manager."""
-    if name not in ctx.obj:
-        ctx.fail(f'A password with the name "{name}" does not exist.')
     ctx.obj.delete(name)
     click.echo('Password deleted.')
 
