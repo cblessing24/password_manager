@@ -81,7 +81,7 @@ class PasswordManager:
             else:
                 return False
 
-    def get(self, name: str) -> Tuple[str, str]:
+    def __getitem__(self, name: str) -> Tuple[str, str]:
         """Get a password from the manager.
 
         Args:
@@ -91,6 +91,10 @@ class PasswordManager:
             Two strings, the info and the password associated with the
             requested name.
         """
+        if not isinstance(name, str):
+            raise TypeError
+        if name not in self:
+            raise KeyError
         _, enc_info, enc_password = self._select_password(name)
         info = self.user.decrypt(enc_info.encode())
         password = self.user.decrypt(enc_password.encode())
