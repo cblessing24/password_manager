@@ -77,7 +77,7 @@ def get(ctx, name, get_info):
 @click.pass_context
 def new(ctx, name, info, password):
     """Add a new password to the manager."""
-    ctx.obj.new(name, info, password)
+    ctx.obj[name] = (info, password)
     click.echo('New password added.')
 
 
