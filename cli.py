@@ -48,7 +48,7 @@ def cli(ctx):
 @click.pass_context
 def get(ctx, name, get_info):
     """Get an existing password from the manager."""
-    info, password = ctx.obj.get(name)
+    info, password = ctx.obj[name]
     if get_info:
         pyperclip.copy(info)
         click.echo('Info copied to clipboard.')
