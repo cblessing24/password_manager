@@ -93,7 +93,7 @@ def new(ctx, name, info, password):
 @click.pass_context
 def delete(ctx, name):
     """Delete an existing password from the manager."""
-    ctx.obj.delete(name)
+    del ctx.obj[name]
     click.echo('Password deleted.')
 
 
