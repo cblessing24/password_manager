@@ -92,7 +92,7 @@ class PasswordManager:
             requested name.
         """
         if not isinstance(name, str):
-            raise TypeError('Not a string')
+            raise TypeError('Name must be a string.')
         if name not in self:
             raise KeyError
         _, enc_info, enc_password = self._select_password(name)
@@ -100,29 +100,38 @@ class PasswordManager:
         password = self.user.decrypt(enc_password.encode())
         return info, password
 
-    def new(self, name: str, info: str, password: str) -> None:
+    def __setitem__(self, name: str, value: Tuple[str, str]) -> None:
         """Add a new password to the manager.
 
         Args:
             name: A string, the name for the new password.
-            info: A string, the info associated with the new password.
-            password: A string, the new password.
+            value: A tuple containing two strings, the info associated with the
+                new password and the new password itself.
 
         Returns:
             None.
         """
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
+        if not isinstance(value, tuple):
+            raise TypeError('Value must be a tuple.')
+        if not len(value) == 2:
+            raise ValueError('Tuple must have two elements.')
+        if not isinstance(value[0], str) or not isinstance(value[1], str):
+            raise TypeError('Both tuple elements must be strings.')
+        info, password = value
         enc_info = self.user.encrypt(info)
         enc_password = self.user.encrypt(password)
         with self._conn:
             self._c.execute('''INSERT INTO passwords VALUES (
-            :name,
-            :enc_info,
-            :enc_password
-            )''', {
+                        :name,
+                        :enc_info,
+                        :enc_password
+                        )''', {
                 'name': name,
                 'enc_info': enc_info.decode(),
                 'enc_password': enc_password.decode()
-                })
+            })
 
     def __delitem__(self, name: str) -> None:
         """Deletes a password from the manager.
@@ -135,7 +144,7 @@ class PasswordManager:
             None.
         """
         if not isinstance(name, str):
-            raise TypeError('Not a string')
+            raise TypeError('Name must be a string.')
         if name not in self:
             raise KeyError
         with self._conn:
