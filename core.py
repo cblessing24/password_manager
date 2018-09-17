@@ -92,7 +92,7 @@ class PasswordManager:
             requested name.
         """
         if not isinstance(name, str):
-            raise TypeError
+            raise TypeError('Not a string')
         if name not in self:
             raise KeyError
         _, enc_info, enc_password = self._select_password(name)
@@ -124,7 +124,7 @@ class PasswordManager:
                 'enc_password': enc_password.decode()
                 })
 
-    def delete(self, name: str) -> None:
+    def __delitem__(self, name: str) -> None:
         """Deletes a password from the manager.
 
         Args:
@@ -134,6 +134,10 @@ class PasswordManager:
         Returns:
             None.
         """
+        if not isinstance(name, str):
+            raise TypeError('Not a string')
+        if name not in self:
+            raise KeyError
         with self._conn:
             self._c.execute(
                 'DELETE FROM passwords WHERE name = :name', {'name': name})
