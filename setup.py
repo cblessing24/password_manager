@@ -13,6 +13,6 @@ setup(
     ],
     entry_points='''
       [console_scripts]
-      pwm=pwm:cli  
+      pwm=cli:cli  
     '''
 )
