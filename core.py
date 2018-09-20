@@ -10,10 +10,20 @@ from cryptography.fernet import Fernet, InvalidToken
 
 
 def enforce_authentication(func):
-    def wrapper(*args, **kwargs):
-        if not args[0].authenticated:
+    """Raise a runtime error if the user is not authenticated."""
+    def wrapper(self, *args, **kwargs):
+        if not self.authenticated:
             raise RuntimeError('Not authenticated.')
-        return func(*args, **kwargs)
+        return func(self, *args, **kwargs)
+    return wrapper
+
+
+def enforce_name_str_type(func):
+    """Raise a type error if the name is not a string."""
+    def wrapper(self, name, *args, **kwargs):
+        if not isinstance(name, str):
+            raise TypeError('Name must be a string.')
+        return func(self, name, *args, **kwargs)
     return wrapper
 
 
@@ -94,6 +104,7 @@ class PasswordManager:
                 self.authenticated = True
 
     @enforce_authentication
+    @enforce_name_str_type
     def __getitem__(self, name: str) -> Tuple[str, str]:
         """Get a password from the manager.
 
@@ -104,8 +115,6 @@ class PasswordManager:
             Two strings, the info and the password associated with the
             requested name.
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if name not in self:
             raise KeyError('Name does not exist.')
         _, enc_info, enc_password = self._select_password(name)
@@ -114,6 +123,7 @@ class PasswordManager:
         return info, password
 
     @enforce_authentication
+    @enforce_name_str_type
     def __setitem__(self, name: str, value: Tuple[str, str]) -> None:
         """Add a new password to the manager.
 
@@ -125,8 +135,6 @@ class PasswordManager:
         Returns:
             None.
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if not isinstance(value, tuple):
             raise TypeError('Value must be a tuple.')
         if not len(value) == 2:
@@ -148,6 +156,7 @@ class PasswordManager:
             })
 
     @enforce_authentication
+    @enforce_name_str_type
     def __delitem__(self, name: str) -> None:
         """Deletes a password from the manager.
 
@@ -158,8 +167,6 @@ class PasswordManager:
         Returns:
             None.
         """
-        if not isinstance(name, str):
-            raise TypeError('Name must be a string.')
         if name not in self:
             raise KeyError
         with self._conn:
@@ -183,6 +190,8 @@ class PasswordManager:
         Returns:
             None.
         """
+        if not isinstance(new_password, str):
+            raise TypeError('New password must be a string.')
         self.user.change_password(new_password)
         with self._conn:
             self._c.execute(
@@ -191,13 +200,21 @@ class PasswordManager:
             )
 
     def _select_user(self):
-        return self._c.execute('SELECT * FROM user').fetchone()
+        users = self._c.execute('SELECT * FROM user').fetchall()
+        assert len(users) <= 1
+        if not users:
+            return False
+        return users[0]
 
     def _select_password(self, name):
-        return self._c.execute(
+        passwords = self._c.execute(
             'SELECT * FROM passwords WHERE name = :name',
             {'name': name}
-        ).fetchone()
+        ).fetchall()
+        assert len(passwords) <= 1
+        if not passwords:
+            return False
+        return passwords[0]
 
     def __contains__(self, name: str) -> bool:
         if self._select_password(name):
@@ -316,8 +333,7 @@ class User:
 
 
 def main():
-    password_manager = PasswordManager()
-    print(password_manager['kappa'])
+    pass
 
 
 if __name__ == '__main__':
