@@ -9,12 +9,22 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.fernet import Fernet, InvalidToken
 
 
+def enforce_authentication(func):
+    def wrapper(*args, **kwargs):
+        if not args[0].authenticated:
+            raise RuntimeError('Not authenticated.')
+        return func(*args, **kwargs)
+    return wrapper
+
+
 class PasswordManager:
     """A password managing class.
 
     Attributes:
         user_exists: A boolean indicating if a already user exists or not.
         user: An instance of the User class.
+        authenticated: A boolean indicating if the authentication was
+            successful or not.
     """
 
     def __init__(self):
@@ -36,16 +46,21 @@ class PasswordManager:
         else:
             self.user_exists = False
         self.user: Optional[User] = None
+        self.authenticated: bool = False
 
-    def authenticate(self, master_password: str) -> bool:
+    def authenticate(self, master_password: str) -> None:
         """Authenticate the user.
 
         Args:
             master_password: A string, the user's master password.
 
         Returns:
-            True if the authentication was successful, otherwise False.
+            None.
         """
+        if self.authenticated:
+            raise RuntimeError('A user is already authenticated.')
+        if not isinstance(master_password, str):
+            raise TypeError('Master password must be a string.')
         if self.user_exists:
             # Retrieve the user's salt and encrypted data encryption key from
             # the user table.
@@ -57,17 +72,16 @@ class PasswordManager:
             self.user = User(salt, enc_data_enc_key, master_password)
             # User instance's success attribute is False if the password was
             # incorrect.
-            if self.user.success:
-                return True
-            else:
-                return False
+            if self.user.initialized:
+                self.authenticated = True
+            return
         else:
             # Initialize a completely new user by just passing the master
             # password to the User constructor.
             self.user = User(master_password=master_password)
             # Add the encrypted data encryption key and the salt of the User
             # instance to the user table.
-            if self.user.success:
+            if self.user.initialized:
                 with self._conn:
                     self._c.execute('''INSERT INTO user VALUES (
                                 :salt, 
@@ -77,10 +91,9 @@ class PasswordManager:
                             self.user.salt).decode(),
                         'enc_data_enc_key': self.user.enc_data_enc_key.decode()
                     })
-                return True
-            else:
-                return False
+                self.authenticated = True
 
+    @enforce_authentication
     def __getitem__(self, name: str) -> Tuple[str, str]:
         """Get a password from the manager.
 
@@ -94,12 +107,13 @@ class PasswordManager:
         if not isinstance(name, str):
             raise TypeError('Name must be a string.')
         if name not in self:
-            raise KeyError
+            raise KeyError('Name does not exist.')
         _, enc_info, enc_password = self._select_password(name)
         info = self.user.decrypt(enc_info.encode())
         password = self.user.decrypt(enc_password.encode())
         return info, password
 
+    @enforce_authentication
     def __setitem__(self, name: str, value: Tuple[str, str]) -> None:
         """Add a new password to the manager.
 
@@ -133,6 +147,7 @@ class PasswordManager:
                 'enc_password': enc_password.decode()
             })
 
+    @enforce_authentication
     def __delitem__(self, name: str) -> None:
         """Deletes a password from the manager.
 
@@ -151,12 +166,14 @@ class PasswordManager:
             self._c.execute(
                 'DELETE FROM passwords WHERE name = :name', {'name': name})
 
+    @enforce_authentication
     def reset(self) -> None:
         """Deletes the user and any passwords in the manager."""
         with self._conn:
             self._c.execute('DELETE FROM user')
             self._c.execute('DELETE FROM passwords')
 
+    @enforce_authentication
     def change_password(self, new_password: str) -> None:
         """Change the user's master password.
 
@@ -201,7 +218,7 @@ class User:
     """A class that represents a user of the password manager.
 
     Attributes:
-        success: Bool, True if the initialization was successful, false
+        initialized: Bool, True if the initialization was successful, false
             otherwise.
         salt: Bytes, the user's salt.
         data_enc_key: Bytes, the data encryption key used to encrypt/decrypt
@@ -248,9 +265,9 @@ class User:
                 self.data_enc_key: bytes = Fernet(
                     key_enc_key).decrypt(enc_data_enc_key)
             except InvalidToken:
-                self.success = False
+                self.initialized = False
             else:
-                self.success = True
+                self.initialized = True
         else:
             # A completely new user should  be created.
             salt = os.urandom(16)
@@ -261,7 +278,7 @@ class User:
             self.data_enc_key: bytes = Fernet.generate_key()
             # Encrypt the data encryption key using the key encryption key.
             enc_data_enc_key = Fernet(key_enc_key).encrypt(self.data_enc_key)
-            self.success = True
+            self.initialized = True
         self.salt: bytes = salt
         self.enc_data_enc_key: bytes = enc_data_enc_key
 
@@ -299,7 +316,8 @@ class User:
 
 
 def main():
-    pass
+    password_manager = PasswordManager()
+    print(password_manager['kappa'])
 
 
 if __name__ == '__main__':
