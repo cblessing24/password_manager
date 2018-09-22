@@ -72,36 +72,41 @@ class PasswordManager:
         if not isinstance(master_password, str):
             raise TypeError('Master password must be a string.')
         if self.user_exists:
-            # Retrieve the user's salt and encrypted data encryption key from
-            # the user table.
-            salt, enc_data_enc_key = self._select_user()
-            salt = base64.urlsafe_b64decode(salt.encode())
-            enc_data_enc_key = enc_data_enc_key.encode()
-            # Initialize an instance of the user class using the retrieved
-            # data.
-            self.user = User(salt, enc_data_enc_key, master_password)
-            # User instance's success attribute is False if the password was
-            # incorrect.
-            if self.user.initialized:
-                self.authenticated = True
-            return
+            self._authenticate_existing_user(master_password)
         else:
-            # Initialize a completely new user by just passing the master
-            # password to the User constructor.
-            self.user = User(master_password=master_password)
-            # Add the encrypted data encryption key and the salt of the User
-            # instance to the user table.
-            if self.user.initialized:
-                with self._conn:
-                    self._c.execute('''INSERT INTO user VALUES (
-                                :salt, 
-                                :enc_data_enc_key
-                                )''', {
-                        'salt': base64.urlsafe_b64encode(
-                            self.user.salt).decode(),
-                        'enc_data_enc_key': self.user.enc_data_enc_key.decode()
-                    })
-                self.authenticated = True
+            self._authenticate_new_user(master_password)
+
+    def _authenticate_existing_user(self, master_password):
+        # Retrieve the user's salt and encrypted data encryption key from
+        # the user table.
+        salt, enc_data_enc_key = self._select_user()
+        salt = base64.urlsafe_b64decode(salt.encode())
+        enc_data_enc_key = enc_data_enc_key.encode()
+        # Initialize an instance of the user class using the retrieved
+        # data.
+        self.user = User(salt, enc_data_enc_key, master_password)
+        # User instance's success attribute is False if the password was
+        # incorrect.
+        if self.user.initialized:
+            self.authenticated = True
+
+    def _authenticate_new_user(self, master_password):
+        # Initialize a completely new user by just passing the master
+        # password to the User constructor.
+        self.user = User(master_password=master_password)
+        # Add the encrypted data encryption key and the salt of the User
+        # instance to the user table.
+        if self.user.initialized:
+            with self._conn:
+                self._c.execute('''INSERT INTO user VALUES (
+                                        :salt, 
+                                        :enc_data_enc_key
+                                        )''', {
+                    'salt': base64.urlsafe_b64encode(
+                        self.user.salt).decode(),
+                    'enc_data_enc_key': self.user.enc_data_enc_key.decode()
+                })
+            self.authenticated = True
 
     @enforce_authentication
     @enforce_name_str_type
