@@ -277,32 +277,39 @@ class User:
         else:
             raise RuntimeError('Incorrect combination of arguments passed.')
         if initialized:
-            # An existing user should be reinstated.
-            # Derive the key encryption key from the user's master password.
-            key_enc_key = User._derive_data_enc_key(
-                salt, master_password)
-            # Try to decrypt the encrypted data encryption key using the key
-            # encryption key.
-            try:
-                self.data_enc_key: bytes = Fernet(
-                    key_enc_key).decrypt(enc_data_enc_key)
-            except InvalidToken:
-                self.initialized = False
-            else:
-                self.initialized = True
+            self._init_existing_user(salt, master_password, enc_data_enc_key)
         else:
-            # A completely new user should  be created.
-            salt = os.urandom(16)
-            # Derive the key encryption key from the user's master password.
-            key_enc_key = User._derive_data_enc_key(
-                salt, master_password)
-            # Generate static data encryption key.
-            self.data_enc_key: bytes = Fernet.generate_key()
-            # Encrypt the data encryption key using the key encryption key.
-            enc_data_enc_key = Fernet(key_enc_key).encrypt(self.data_enc_key)
-            self.initialized = True
+            salt, enc_data_enc_key = self._init_new_user(master_password)
         self.salt: bytes = salt
         self.enc_data_enc_key: bytes = enc_data_enc_key
+
+    def _init_existing_user(self, salt, master_password, enc_data_enc_key):
+        # An existing user should be reinstated.
+        # Derive the key encryption key from the user's master password.
+        key_enc_key = User._derive_data_enc_key(
+            salt, master_password)
+        # Try to decrypt the encrypted data encryption key using the key
+        # encryption key.
+        try:
+            self.data_enc_key: bytes = Fernet(
+                key_enc_key).decrypt(enc_data_enc_key)
+        except InvalidToken:
+            self.initialized = False
+        else:
+            self.initialized = True
+
+    def _init_new_user(self, master_password):
+        # A completely new user should  be created.
+        salt = os.urandom(16)
+        # Derive the key encryption key from the user's master password.
+        key_enc_key = User._derive_data_enc_key(
+            salt, master_password)
+        # Generate static data encryption key.
+        self.data_enc_key: bytes = Fernet.generate_key()
+        # Encrypt the data encryption key using the key encryption key.
+        enc_data_enc_key = Fernet(key_enc_key).encrypt(self.data_enc_key)
+        self.initialized = True
+        return salt, enc_data_enc_key
 
     def encrypt(self, data: str) -> bytes:
         """Encrypt data using the user's data encryption key."""
